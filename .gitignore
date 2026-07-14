@@ -1,11 +1,5 @@
-/__pycache__
-/config.json
-/export_log.txt
-/jobs
-/misa_export.py
-/misa_exporter.py
-/output
-/run_all.py
-/setup_auto_schedule.bat
-/test_api.py
-/venv
+venv/
+config.json
+*.py
+export_log.txt
+.gitignore
