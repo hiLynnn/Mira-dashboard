@@ -3,7 +3,7 @@
   "report_id": "OrderItemRevenueReportDetail",
   "report_load_type": 1,
   "output_csv": "order_detail.csv",
-  "take": 50,
+  "take": 500,
   "parameters": {
     "period": 4,
     "v_is_whole_chain": false,
