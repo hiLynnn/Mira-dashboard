@@ -14,7 +14,7 @@ Các đường dẫn dưới đây được sử dụng để liên kết trực
     ```text
     https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/order_detail.csv
     ```
-*   **Trạng thái dữ liệu:** Dữ liệu lịch sử đã được đồng bộ đầy đủ từ ngày khai trương (28/10/2025).
+*   **Trạng thái dữ liệu:** Dữ liệu lịch sử đã được đồng bộ đầy đủ từ ngày khai trương (28/10/2025) và tự động cập nhật tăng trưởng khi kích hoạt lệnh trích xuất.
 
 ### 1.2 Các báo cáo bổ sung (Cấu hình động)
 Khi tích hợp thêm báo cáo mới bằng công cụ `import_curl.py`, dữ liệu sẽ được xuất ra các tệp tương ứng trong thư mục `output/`. Đường dẫn tích hợp vào Power BI sẽ có định dạng:
