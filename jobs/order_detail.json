@@ -4,6 +4,8 @@
   "report_load_type": 1,
   "output_csv": "order_detail.csv",
   "take": 500,
+  "date_field": "order_date",
+  "unique_keys": ["order_detail_id"],
   "parameters": {
     "period": 4,
     "v_is_whole_chain": false,
