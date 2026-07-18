@@ -1,0 +1,352 @@
+[
+  {
+    "name": "order_date",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "ref_no",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "invoice_no",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "sku_code",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "inventory_item_name",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "item_category_name",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "unit_name",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "quantity",
+    "type": "FLOAT64",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "unit_price",
+    "type": "FLOAT64",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "origin_amount",
+    "type": "FLOAT64",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "discount_amount",
+    "type": "FLOAT64",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "total_discount_amount",
+    "type": "FLOAT64",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "total_revenue",
+    "type": "FLOAT64",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "tax_amount",
+    "type": "FLOAT64",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "total_revenue_after_tax",
+    "type": "FLOAT64",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "cost_of_goods_sold",
+    "type": "FLOAT64",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "profit",
+    "type": "FLOAT64",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "customer_code",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "customer_name",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "customer_tel",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "cashier_name",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "channel_name",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "sale_channel_name",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "ecom_order_no",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "delivery_code",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "ecom_return_no",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "order_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "detail_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "order_no",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "channel_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "partner_object_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "partner_object_name",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "order_description",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "order_status",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "branch_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "branch_name",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "order_detail_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "inventory_item_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "parent_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "inventory_item_category_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "unit_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "lot_no",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "inventory_description",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "pre_unit_price_before_discount",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "unit_price_before_tax",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "pre_amount_before_discount",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "discount_amount_before_tax",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "allocation_amount_before_tax",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "allocation_amount",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "allocation_coupon_amount_before_tax",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "allocation_coupon_amount",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "point_before_tax_amount",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "point_amount",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "total_discount_amount_before_tax",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "amount_after_item_discount_before_tax",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "amount_after_item_discount_after_tax",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "amount",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "tax_rate",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "tax_reduction_amount",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "ecom_fee",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "tax_ecom_amount",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "personal_tax_ecom_amount",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "revenue_from_ecom",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "customer_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "cashier_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "cashier_code",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "seller_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "employee_code",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "employee_name",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "transaction_id",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  }
+]
