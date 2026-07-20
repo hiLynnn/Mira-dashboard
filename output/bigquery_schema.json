@@ -36,52 +36,52 @@
   },
   {
     "name": "quantity",
-    "type": "FLOAT64",
+    "type": "FLOAT",
     "mode": "NULLABLE"
   },
   {
     "name": "unit_price",
-    "type": "FLOAT64",
+    "type": "FLOAT",
     "mode": "NULLABLE"
   },
   {
     "name": "origin_amount",
-    "type": "FLOAT64",
+    "type": "FLOAT",
     "mode": "NULLABLE"
   },
   {
     "name": "discount_amount",
-    "type": "FLOAT64",
+    "type": "FLOAT",
     "mode": "NULLABLE"
   },
   {
     "name": "total_discount_amount",
-    "type": "FLOAT64",
+    "type": "FLOAT",
     "mode": "NULLABLE"
   },
   {
     "name": "total_revenue",
-    "type": "FLOAT64",
+    "type": "FLOAT",
     "mode": "NULLABLE"
   },
   {
     "name": "tax_amount",
-    "type": "FLOAT64",
+    "type": "FLOAT",
     "mode": "NULLABLE"
   },
   {
     "name": "total_revenue_after_tax",
-    "type": "FLOAT64",
+    "type": "FLOAT",
     "mode": "NULLABLE"
   },
   {
     "name": "cost_of_goods_sold",
-    "type": "FLOAT64",
+    "type": "FLOAT",
     "mode": "NULLABLE"
   },
   {
     "name": "profit",
-    "type": "FLOAT64",
+    "type": "FLOAT",
     "mode": "NULLABLE"
   },
   {
