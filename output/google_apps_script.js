@@ -4,18 +4,11 @@
  * 
  * HƯỚNG DẪN THIẾT LẬP NHANH:
  * 1. Tạo 1 file Google Sheets mới.
- * 2. Đổi tên tab đầu tiên thành "Config".
- * 3. Điền cấu hình vào cột A và B:
- *    A1: bearer_token        B1: (Dán token JWT từ MISA vào đây)
- *    A2: project_id          B2: mira-503005
- *    A3: dataset_id          B3: mira_data
- *    A4: telegram_chat_id    B4: (Chat ID của bạn, lấy từ bot @userinfobot)
- *    A5: status              B5: (Sẽ tự động cập nhật)
- *    A6: last_run            B6: (Sẽ tự động cập nhật)
- * 4. Tạo tab thứ hai đặt tên là "Log".
- * 5. Vào Extensions -> Apps Script. Xóa hết code cũ và dán toàn bộ file này vào.
- * 6. Trong phần Services bên trái (nhấn dấu +) -> Thêm dịch vụ "BigQuery API".
- * 7. Lưu lại và triển khai (Deploy) dưới dạng Web App (Execute as: Me, Access: Anyone).
+ * 2. Vào Extensions -> Apps Script. Xóa hết code cũ và dán toàn bộ file này vào.
+ * 3. Trong phần Services bên trái (nhấn dấu +) -> Thêm dịch vụ "BigQuery API".
+ * 4. Nhấp chọn hàm "setupSheet" trên thanh công cụ và nhấn "Run" để khởi tạo cấu trúc bảng tính tự động.
+ * 5. Cấu hình Tab "Config" hiển thị trên Google Sheet: dán token MISA, project ID, dataset ID.
+ * 6. Tạo Trigger chạy tự động hàm "runPipeline" hàng ngày lúc 7:00 sáng.
  */
 
 const SPREADSHEET = SpreadsheetApp.getActiveSpreadsheet();
@@ -32,18 +25,17 @@ function setupSheet() {
   }
   
   configSheet.clear();
-  configSheet.getRange('A1:B6').setValues([
+  configSheet.getRange('A1:B5').setValues([
     ['bearer_token', ''],
     ['project_id', 'mira-503005'],
     ['dataset_id', 'mira_data'],
-    ['telegram_chat_id', ''],
     ['status', 'Chưa chạy'],
     ['last_run', '']
   ]);
   
   // Định dạng thẩm mỹ cho tab Config
-  configSheet.getRange('A1:A6').setFontWeight('bold').setBackground('#f3f3f3');
-  configSheet.getRange('A1:B6').setBorder(true, true, true, true, true, true);
+  configSheet.getRange('A1:A5').setFontWeight('bold').setBackground('#f3f3f3');
+  configSheet.getRange('A1:B5').setBorder(true, true, true, true, true, true);
   configSheet.setColumnWidth(1, 150);
   configSheet.setColumnWidth(2, 500);
 
@@ -69,7 +61,7 @@ function setupSheet() {
     } catch(e) {}
   }
   
-  SpreadsheetApp.getUi().alert('Hệ thống MIRA: Khởi tạo cấu trúc Sheets thành công! Hãy điền token và cấu hình Telegram.');
+  SpreadsheetApp.getUi().alert('Hệ thống MIRA: Khởi tạo cấu trúc Sheets thành công! Hãy điền cấu hình và token vào tab Config.');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,24 +76,22 @@ function getConfig() {
   return {
     token:      sheet.getRange('B1').getValue().toString().trim(),
     projectId:  sheet.getRange('B2').getValue().toString().trim(),
-    datasetId:  sheet.getRange('B3').getValue().toString().trim(),
-    telegramId: sheet.getRange('B4').getValue().toString().trim(),
+    datasetId:  sheet.getRange('B3').getValue().toString().trim()
   };
 }
 
 function writeLog(status, records, message) {
   var sheet = SPREADSHEET.getSheetByName('Log');
   if (!sheet) {
-    // Tự động tạo tab Log nếu chưa có
     sheet = SPREADSHEET.insertSheet('Log');
-    sheet.appendRow(['Timestamp', 'Job', 'Status', 'Records Synced', 'Message']);
+    sheet.appendRow(['Thời gian', 'Báo cáo', 'Trạng thái', 'Số bản ghi', 'Chi tiết']);
   }
   sheet.appendRow([new Date(), 'order_detail', status, records, message]);
   
   var configSheet = SPREADSHEET.getSheetByName('Config');
   if (configSheet) {
-    configSheet.getRange('B5').setValue(status === 'SUCCESS' ? '✅ Thành công' : '❌ Lỗi: ' + message);
-    configSheet.getRange('B6').setValue(new Date());
+    configSheet.getRange('B4').setValue(status === 'SUCCESS' ? '✅ Thành công (' + records + ' dòng)' : '❌ Lỗi: ' + message);
+    configSheet.getRange('B5').setValue(new Date());
   }
 }
 
@@ -124,8 +114,7 @@ function getMaxDateFromBQ(cfg) {
     var queryResults = BigQuery.Jobs.query(queryRequest, cfg.projectId);
     
     if (queryResults.rows && queryResults.rows[0].f[0].v !== null) {
-      var maxDateStr = queryResults.rows[0].f[0].v; // Dạng: "2026-07-18T00:00:00" hoặc tương tự
-      // Chuẩn hóa định dạng thời gian cho MISA (ISO 8601 UTC)
+      var maxDateStr = queryResults.rows[0].f[0].v;
       var cleanDate = maxDateStr.split('.')[0];
       if (cleanDate.indexOf('T') !== -1 && !cleanDate.endsWith('Z')) {
         return cleanDate + '.000Z';
@@ -135,7 +124,7 @@ function getMaxDateFromBQ(cfg) {
   } catch (e) {
     Logger.log('Bảng chưa có dữ liệu hoặc lỗi truy vấn: ' + e.message);
   }
-  return '2025-10-27T17:00:00.000Z'; // Fallback ngày bắt đầu dự án mặc định
+  return '2025-10-27T17:00:00.000Z'; // Fallback ngày bắt đầu mặc định
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -147,9 +136,8 @@ function fetchMisaData(token, fromDate) {
   var allRecords = [];
   var skip = 0;
   var take = 500;
-  var toDate = new Date().toISOString(); // Đến thời điểm hiện tại
+  var toDate = new Date().toISOString();
   
-  // Params gốc từ order_detail.json
   var reportParams = {
     "period": 4,
     "v_is_whole_chain": false,
@@ -171,7 +159,6 @@ function fetchMisaData(token, fromDate) {
   
   var encodedParams = Utilities.base64Encode(JSON.stringify(reportParams), Utilities.Charset.UTF_8);
   
-  // Cấu hình các cột mong muốn mapping
   var columns = [
     {"dataFormat": 6, "field": "order_date", "hasSummary": true},
     {"dataFormat": 5, "field": "ref_no", "hasSummary": true},
@@ -283,13 +270,12 @@ function fetchMisaData(token, fromDate) {
     }
 
     skip += take;
-    Utilities.sleep(300); // Tránh bị rate limit MISA
+    Utilities.sleep(300);
   }
 
   return allRecords;
 }
 
-// Hàm hỗ trợ tìm mảng rows trong response JSON phức tạp của MISA
 function extractRows(resData) {
   if (Array.isArray(resData)) return resData;
   if (typeof resData === 'object' && resData !== null) {
@@ -305,7 +291,6 @@ function extractRows(resData) {
         }
       }
     }
-    // Fallback: Tìm property dạng Array đầu tiên chứa object
     for (var k in resData) {
       if (Array.isArray(resData[k]) && resData[k].length > 0 && typeof resData[k][0] === 'object') {
         return resData[k];
@@ -325,15 +310,10 @@ function mergeIntoBigQuery(cfg, records) {
   var targetTableId = 'order_detail';
   var stagingTableId = targetTableId + '_staging_tmp';
 
-  // 4.1. Lấy thông tin schema của bảng đích để staging khớp tuyệt đối
   var targetTable = BigQuery.Tables.get(cfg.projectId, cfg.datasetId, targetTableId);
   var targetSchema = targetTable.schema;
-
-  // Xây dựng danh sách trường để viết câu lệnh DML MERGE
   var fields = targetSchema.fields.map(function(f) { return f.name; });
 
-  // 4.2. Chuẩn hóa dữ liệu sang dạng NEWLINE_DELIMITED_JSON
-  // Tất cả các trường số cần parse đúng kiểu FLOAT/INT, các trường còn lại chuyển thành string
   var newlineJsonString = records.map(function(row) {
     var cleanRow = {};
     targetSchema.fields.forEach(function(field) {
@@ -351,7 +331,6 @@ function mergeIntoBigQuery(cfg, records) {
 
   var dataBlob = Utilities.newBlob(newlineJsonString, 'application/octet-stream');
 
-  // 4.3. Tạo bảng Staging tạm thời
   var jobConfig = {
     configuration: {
       load: {
@@ -370,7 +349,6 @@ function mergeIntoBigQuery(cfg, records) {
   Logger.log('Đang load data lên staging table: ' + stagingTableId);
   var loadJob = BigQuery.Jobs.insert(jobConfig, cfg.projectId, dataBlob);
   
-  // Chờ cho load job hoàn thành
   var jobId = loadJob.jobReference.jobId;
   while (true) {
     var status = BigQuery.Jobs.get(cfg.projectId, jobId).status;
@@ -384,7 +362,6 @@ function mergeIntoBigQuery(cfg, records) {
   }
   Logger.log('Tải staging table hoàn thành.');
 
-  // 4.4. Thực thi câu lệnh SQL MERGE để UPSERT dữ liệu chống trùng lặp
   var uniqueKeys = ['order_detail_id'];
   var onClause = uniqueKeys.map(function(k) { return `T.\`${k}\` = S.\`${k}\``; }).join(' AND ');
   var updateSet = fields.map(function(f) { return `T.\`${f}\` = S.\`${f}\``; }).join(', ');
@@ -408,7 +385,6 @@ function mergeIntoBigQuery(cfg, records) {
   };
   var queryJob = BigQuery.Jobs.query(queryRequest, cfg.projectId);
   
-  // 4.5. Dọn dẹp: Xóa bảng tạm Staging
   try {
     BigQuery.Tables.remove(cfg.projectId, cfg.datasetId, stagingTableId);
     Logger.log('Đã xóa bảng tạm Staging.');
@@ -420,7 +396,7 @@ function mergeIntoBigQuery(cfg, records) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. HÀM ĐIỀU PHỐI CHÍNH (CHẠY 24H HOẶC TRIGGER TỪ TELEGRAM)
+// 5. HÀM ĐIỀU PHỐI CHÍNH (CHẠY 24H)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function runPipeline() {
@@ -439,147 +415,22 @@ function runPipeline() {
       throw new Error('Thiếu token MISA trong Config! Vui lòng cập nhật.');
     }
 
-    // Step 1: Lấy mốc thời gian lớn nhất
     var fromDate = getMaxDateFromBQ(cfg);
     Logger.log('Mốc cuốn chiếu từ: ' + fromDate);
 
-    // Step 2: Kéo dữ liệu từ MISA
     var records = fetchMisaData(cfg.token, fromDate);
     Logger.log('Tổng records lấy về từ MISA: ' + records.length);
 
     if (records.length === 0) {
       writeLog('NO_DATA', 0, 'Dữ liệu đã mới nhất, không có bản ghi mới.');
-      sendTelegramAlert(cfg.telegramId, 'ℹ️ <b>MISA Sync:</b> Không có dữ liệu mới từ ' + fromDate.split('T')[0]);
       return;
     }
 
-    // Step 3: Ghi vào BigQuery
     var upsertedCount = mergeIntoBigQuery(cfg, records);
-    
-    // Step 4: Log kết quả
     writeLog('SUCCESS', upsertedCount, 'Đồng bộ thành công.');
-    
-    // Gửi alert Telegram
-    var successMsg = `✅ <b>MISA Sync Thành Công!</b>\n` + 
-                     `📊 Số lượng: <code>${upsertedCount}</code> dòng mới\n` +
-                     `⏰ Mốc cuốn chiếu: <code>${fromDate.split('T')[0]}</code>`;
-    sendTelegramAlert(cfg.telegramId, successMsg);
 
   } catch (error) {
     var errMsg = error.message;
     writeLog('ERROR', 0, errMsg);
-    
-    var errorMsg = `❌ <b>MISA Sync Thất Bại!</b>\n` +
-                   `⚠️ Lỗi: <code>${errMsg}</code>\n` +
-                   `💡 Nhắn tin: <code>/token [token_mới]</code> để khôi phục.`;
-    sendTelegramAlert(cfg.telegramId, errorMsg);
   }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 6. TELEGRAM BOT WEBHOOK (doPost)
-// ─────────────────────────────────────────────────────────────────────────────
-
-function doPost(e) {
-  try {
-    var update = JSON.parse(e.postData.contents);
-    if (!update.message) return ContentService.createTextOutput('No message');
-
-    var chatId = update.message.chat.id.toString();
-    var text = update.message.text ? update.message.text.trim() : '';
-    
-    // Validate đúng chat ID đã đăng ký trong config
-    var cfg = getConfig();
-    if (cfg.telegramId && chatId !== cfg.telegramId) {
-      sendTelegramAlert(chatId, '❌ Bạn không có quyền truy cập bot này.');
-      return ContentService.createTextOutput('Unauthorized');
-    }
-
-    if (text.indexOf('/token ') === 0) {
-      var newToken = text.substring(7).trim();
-      if (!newToken) {
-        sendTelegramAlert(chatId, '⚠️ Vui lòng cung cấp mã token sau lệnh /token');
-        return ContentService.createTextOutput('Empty token');
-      }
-      
-      // Ghi token mới vào file Sheet
-      var sheet = SPREADSHEET.getSheetByName('Config');
-      sheet.getRange('B1').setValue(newToken);
-      
-      sendTelegramAlert(chatId, '✅ <b>Đã cập nhật Token thành công!</b>\nNhập lệnh <code>/run</code> để bắt đầu đồng bộ.');
-      
-    } else if (text === '/run') {
-      sendTelegramAlert(chatId, '⏳ <b>Đang kích hoạt đồng bộ...</b>');
-      
-      // Chạy pipeline bất đồng bộ để tránh bot timeout (Telegram webhook yêu cầu phản hồi < 3s)
-      // Sử dụng Trigger một lần chạy ngay sau 1 giây
-      ScriptApp.newTrigger('runPipeline')
-        .timeBased()
-        .after(1000)
-        .create();
-        
-      sendTelegramAlert(chatId, '🚀 Pipeline đã được trigger chạy ngầm. Kết quả sẽ được gửi sau ít phút.');
-      
-    } else if (text === '/status') {
-      var sheet = SPREADSHEET.getSheetByName('Config');
-      var status = sheet.getRange('B5').getValue();
-      var lastRun = sheet.getRange('B6').getValue();
-      
-      // Đếm số dòng hiện tại trong BQ
-      var totalRecords = 0;
-      try {
-        var sql = `SELECT COUNT(*) as total FROM \`${cfg.projectId}.${cfg.datasetId}.order_detail\``;
-        var queryResults = BigQuery.Jobs.query({query: sql, useLegacySql: false}, cfg.projectId);
-        totalRecords = queryResults.rows[0].f[0].v;
-      } catch (e) {
-        totalRecords = 'Lỗi truy vấn';
-      }
-
-      var statusMsg = `📊 <b>TÌNH TRẠNG PIPELINE MIRA</b>\n\n` +
-                      `🏷️ Trạng thái cuối: <code>${status}</code>\n` +
-                      `📅 Lần chạy cuối: <code>${lastRun}</code>\n` +
-                      `💾 Tổng số dòng BigQuery: <code>${Number(totalRecords).toLocaleString('vi-VN')}</code>\n` +
-                      `🔑 Trạng thái Token: <code>${cfg.token ? 'Có sẵn (Độ dài: ' + cfg.token.length + ')' : 'Trống ⚠️'}</code>`;
-      sendTelegramAlert(chatId, statusMsg);
-      
-    } else {
-      var helpMsg = `❓ <b>Hệ thống điều khiển MISA Exporter</b>\n\n` +
-                    `⌨️ Lệnh hỗ trợ:\n` +
-                    `• <code>/token [dán_mã_token]</code> : Cập nhật token JWT\n` +
-                    `• <code>/run</code> : Trigger đồng bộ cuốn chiếu lập tức\n` +
-                    `• <code>/status</code> : Xem tình trạng đồng bộ và số dòng hiện tại`;
-      sendTelegramAlert(chatId, helpMsg);
-    }
-  } catch (error) {
-    Logger.log('Lỗi xử lý Webhook: ' + error.message);
-  }
-  
-  return ContentService.createTextOutput('OK');
-}
-
-// Helper gửi tin nhắn đến Telegram
-function sendTelegramAlert(chatId, message) {
-  if (!chatId) return;
-  // Đọc Bot token cấu hình trong Script Properties của Apps Script để bảo mật
-  var botToken = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
-  if (!botToken) {
-    Logger.log('Lỗi: Chưa cấu hình TELEGRAM_BOT_TOKEN trong Project Settings.');
-    return;
-  }
-  
-  var url = 'https://api.telegram.org/bot' + botToken + '/sendMessage';
-  var payload = {
-    'chat_id': chatId,
-    'text': message,
-    'parse_mode': 'HTML'
-  };
-  
-  var options = {
-    'method': 'post',
-    'contentType': 'application/json',
-    'payload': JSON.stringify(payload),
-    'muteHttpExceptions': true
-  };
-  
-  UrlFetchApp.fetch(url, options);
 }
