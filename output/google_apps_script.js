@@ -1,6 +1,6 @@
 /**
  * MISA eShop to Google BigQuery Auto Pipeline (Multi-Job Version)
- * Author: Antigravity AI
+ * Author: Linh
  * 
  * HƯỚNG DẪN THÊM BÁO CÁO MỚI:
  * 1. Tạo bảng đích trên BigQuery (ví dụ: `inventory_summary`).
@@ -22,7 +22,7 @@ const JOBS = [
     reportId: "OrderItemRevenueReportDetail",
     dateField: "order_date",           // Cột ngày dùng để lọc cuốn chiếu
     uniqueKeys: ["order_detail_id"],   // Khóa chính để chống trùng lặp dữ liệu
-    
+
     // Cấu hình tham số gửi lên API MISA
     parameters: {
       "period": 4,
@@ -40,37 +40,37 @@ const JOBS = [
       "v_is_refresh": true,
       "v_session_key": "31dadf56c4ec76c3a95836bc4865fe9975556aa7a1654437be2ef67f42c3577c"
     },
-    
+
     // Khai báo danh sách các cột cần lấy từ API
     columns: [
-      {"dataFormat": 6, "field": "order_date", "hasSummary": true},
-      {"dataFormat": 5, "field": "ref_no", "hasSummary": true},
-      {"dataFormat": 5, "field": "invoice_no", "hasSummary": true},
-      {"dataFormat": 5, "field": "sku_code", "hasSummary": true},
-      {"dataFormat": 5, "field": "inventory_item_name", "hasSummary": true},
-      {"dataFormat": 5, "field": "item_category_name", "hasSummary": true},
-      {"dataFormat": 5, "field": "unit_name", "hasSummary": true},
-      {"dataFormat": 4, "field": "quantity", "hasSummary": true},
-      {"dataFormat": 1, "field": "unit_price", "hasSummary": true},
-      {"dataFormat": 1, "field": "origin_amount", "hasSummary": true},
-      {"dataFormat": 1, "field": "discount_amount", "hasSummary": true},
-      {"dataFormat": 1, "field": "total_discount_amount", "hasSummary": true},
-      {"dataFormat": 1, "field": "total_revenue", "hasSummary": true},
-      {"dataFormat": 1, "field": "tax_amount", "hasSummary": true},
-      {"dataFormat": 1, "field": "total_revenue_after_tax", "hasSummary": true},
-      {"dataFormat": 1, "field": "cost_of_goods_sold", "hasSummary": true},
-      {"dataFormat": 1, "field": "profit", "hasSummary": true},
-      {"dataFormat": 5, "field": "customer_code", "hasSummary": true},
-      {"dataFormat": 5, "field": "customer_name", "hasSummary": true},
-      {"dataFormat": 5, "field": "customer_tel", "hasSummary": true},
-      {"dataFormat": 5, "field": "cashier_name", "hasSummary": true},
-      {"dataFormat": 5, "field": "channel_name", "hasSummary": true},
-      {"dataFormat": 5, "field": "sale_channel_name", "hasSummary": true},
-      {"dataFormat": 5, "field": "ecom_order_no", "hasSummary": true},
-      {"dataFormat": 5, "field": "delivery_code", "hasSummary": true},
-      {"dataFormat": 5, "field": "ecom_return_no", "hasSummary": true}
+      { "dataFormat": 6, "field": "order_date", "hasSummary": true },
+      { "dataFormat": 5, "field": "ref_no", "hasSummary": true },
+      { "dataFormat": 5, "field": "invoice_no", "hasSummary": true },
+      { "dataFormat": 5, "field": "sku_code", "hasSummary": true },
+      { "dataFormat": 5, "field": "inventory_item_name", "hasSummary": true },
+      { "dataFormat": 5, "field": "item_category_name", "hasSummary": true },
+      { "dataFormat": 5, "field": "unit_name", "hasSummary": true },
+      { "dataFormat": 4, "field": "quantity", "hasSummary": true },
+      { "dataFormat": 1, "field": "unit_price", "hasSummary": true },
+      { "dataFormat": 1, "field": "origin_amount", "hasSummary": true },
+      { "dataFormat": 1, "field": "discount_amount", "hasSummary": true },
+      { "dataFormat": 1, "field": "total_discount_amount", "hasSummary": true },
+      { "dataFormat": 1, "field": "total_revenue", "hasSummary": true },
+      { "dataFormat": 1, "field": "tax_amount", "hasSummary": true },
+      { "dataFormat": 1, "field": "total_revenue_after_tax", "hasSummary": true },
+      { "dataFormat": 1, "field": "cost_of_goods_sold", "hasSummary": true },
+      { "dataFormat": 1, "field": "profit", "hasSummary": true },
+      { "dataFormat": 5, "field": "customer_code", "hasSummary": true },
+      { "dataFormat": 5, "field": "customer_name", "hasSummary": true },
+      { "dataFormat": 5, "field": "customer_tel", "hasSummary": true },
+      { "dataFormat": 5, "field": "cashier_name", "hasSummary": true },
+      { "dataFormat": 5, "field": "channel_name", "hasSummary": true },
+      { "dataFormat": 5, "field": "sale_channel_name", "hasSummary": true },
+      { "dataFormat": 5, "field": "ecom_order_no", "hasSummary": true },
+      { "dataFormat": 5, "field": "delivery_code", "hasSummary": true },
+      { "dataFormat": 5, "field": "ecom_return_no", "hasSummary": true }
     ],
-    
+
     // Cấu hình metadata báo cáo của MISA
     reportList: {
       "report_id": "OrderItemRevenueReportDetail",
@@ -95,7 +95,7 @@ const JOBS = [
       "modified_date": "2025-01-17T08:46:25"
     }
   }
-  
+
   /* MẪU CẤU HÌNH BÁO CÁO THỨ 2 (Bạn có thể bỏ comment và chỉnh sửa để thêm):
   ,{
     name: "inventory_summary",         // Tên bảng BigQuery mới
@@ -130,7 +130,7 @@ function setupSheet() {
   if (!configSheet) {
     configSheet = SPREADSHEET.insertSheet('Config');
   }
-  
+
   configSheet.clear();
   configSheet.getRange('A1:B5').setValues([
     ['bearer_token', ''],
@@ -139,7 +139,7 @@ function setupSheet() {
     ['status', 'Chưa chạy'],
     ['last_run', '']
   ]);
-  
+
   configSheet.getRange('A1:A5').setFontWeight('bold').setBackground('#f3f3f3');
   configSheet.getRange('A1:B5').setBorder(true, true, true, true, true, true);
   configSheet.setColumnWidth(1, 150);
@@ -164,9 +164,9 @@ function setupSheet() {
   if (defaultSheet && SPREADSHEET.getSheets().length > 1) {
     try {
       SPREADSHEET.deleteSheet(defaultSheet);
-    } catch(e) {}
+    } catch (e) { }
   }
-  
+
   SpreadsheetApp.getUi().alert('Hệ thống MIRA: Khởi tạo cấu trúc Sheets thành công! Hãy điền cấu hình và token vào tab Config.');
 }
 
@@ -180,9 +180,9 @@ function getConfig() {
     throw new Error('Không tìm thấy tab "Config" trong Google Sheets.');
   }
   return {
-    token:      sheet.getRange('B1').getValue().toString().trim(),
-    projectId:  sheet.getRange('B2').getValue().toString().trim(),
-    datasetId:  sheet.getRange('B3').getValue().toString().trim()
+    token: sheet.getRange('B1').getValue().toString().trim(),
+    projectId: sheet.getRange('B2').getValue().toString().trim(),
+    datasetId: sheet.getRange('B3').getValue().toString().trim()
   };
 }
 
@@ -212,14 +212,14 @@ function getMaxDateFromBQ(cfg, job) {
     SELECT MAX(${job.dateField}) as max_date 
     FROM \`${cfg.projectId}.${cfg.datasetId}.${job.name}\`
   `;
-  
+
   try {
     var queryRequest = {
       query: sql,
       useLegacySql: false
     };
     var queryResults = BigQuery.Jobs.query(queryRequest, cfg.projectId);
-    
+
     if (queryResults.rows && queryResults.rows[0].f[0].v !== null) {
       var maxDateStr = queryResults.rows[0].f[0].v;
       var cleanDate = maxDateStr.split('.')[0];
@@ -244,12 +244,12 @@ function fetchMisaData(token, fromDate, job) {
   var skip = 0;
   var take = 500;
   var toDate = new Date().toISOString();
-  
+
   // Clone parameters và đè từ ngày/đến ngày
   var reportParams = JSON.parse(JSON.stringify(job.parameters));
   reportParams["v_from_date"] = fromDate;
   reportParams["v_to_date"] = toDate;
-  
+
   var encodedParams = Utilities.base64Encode(JSON.stringify(reportParams), Utilities.Charset.UTF_8);
 
   var headers = {
@@ -353,11 +353,11 @@ function mergeIntoBigQuery(cfg, records, job) {
 
   var targetTable = BigQuery.Tables.get(cfg.projectId, cfg.datasetId, targetTableId);
   var targetSchema = targetTable.schema;
-  var fields = targetSchema.fields.map(function(f) { return f.name; });
+  var fields = targetSchema.fields.map(function (f) { return f.name; });
 
-  var newlineJsonString = records.map(function(row) {
+  var newlineJsonString = records.map(function (row) {
     var cleanRow = {};
-    targetSchema.fields.forEach(function(field) {
+    targetSchema.fields.forEach(function (field) {
       var val = row[field.name];
       if (val === undefined || val === null || val === '') {
         cleanRow[field.name] = null;
@@ -389,7 +389,7 @@ function mergeIntoBigQuery(cfg, records, job) {
 
   Logger.log(`[${job.name}] Load staging table: ` + stagingTableId);
   var loadJob = BigQuery.Jobs.insert(jobConfig, cfg.projectId, dataBlob);
-  
+
   var jobId = loadJob.jobReference.jobId;
   while (true) {
     var status = BigQuery.Jobs.get(cfg.projectId, jobId).status;
@@ -402,10 +402,10 @@ function mergeIntoBigQuery(cfg, records, job) {
     Utilities.sleep(1000);
   }
 
-  var onClause = job.uniqueKeys.map(function(k) { return `T.\`${k}\` = S.\`${k}\``; }).join(' AND ');
-  var updateSet = fields.map(function(f) { return `T.\`${f}\` = S.\`${f}\``; }).join(', ');
-  var insFields = fields.map(function(f) { return `\`${f}\``; }).join(', ');
-  var insValues = fields.map(function(f) { return `S.\`${f}\``; }).join(', ');
+  var onClause = job.uniqueKeys.map(function (k) { return `T.\`${k}\` = S.\`${k}\``; }).join(' AND ');
+  var updateSet = fields.map(function (f) { return `T.\`${f}\` = S.\`${f}\``; }).join(', ');
+  var insFields = fields.map(function (f) { return `\`${f}\``; }).join(', ');
+  var insValues = fields.map(function (f) { return `S.\`${f}\``; }).join(', ');
 
   var mergeSql = `
     MERGE \`${cfg.projectId}.${cfg.datasetId}.${targetTableId}\` T
@@ -423,7 +423,7 @@ function mergeIntoBigQuery(cfg, records, job) {
     useLegacySql: false
   };
   var queryJob = BigQuery.Jobs.query(queryRequest, cfg.projectId);
-  
+
   try {
     BigQuery.Tables.remove(cfg.projectId, cfg.datasetId, stagingTableId);
     Logger.log(`[${job.name}] Cleaned staging table.`);
@@ -448,7 +448,7 @@ function runPipeline() {
   }
 
   Logger.log('=== Khởi động MIRA Multi-Job Pipeline ===');
-  
+
   if (!cfg.token) {
     updateGlobalStatus('❌ Thiếu Token MISA');
     return;
@@ -461,7 +461,7 @@ function runPipeline() {
   for (var i = 0; i < totalJobs; i++) {
     var job = JOBS[i];
     Logger.log(`\n--- Bắt đầu chạy Job [${i + 1}/${totalJobs}]: ${job.name} ---`);
-    
+
     try {
       // Step 1: Lấy mốc thời gian lớn nhất từ BigQuery
       var fromDate = getMaxDateFromBQ(cfg, job);
@@ -479,10 +479,10 @@ function runPipeline() {
 
       // Step 3: Ghi dữ liệu vào BigQuery (UPSERT)
       var upsertedCount = mergeIntoBigQuery(cfg, records, job);
-      
+
       writeLog(job.name, 'SUCCESS', upsertedCount, 'Đồng bộ thành công.');
       successCount++;
-      
+
     } catch (error) {
       var errMsg = error.message;
       Logger.log(`[${job.name}] ❌ Lỗi: ` + errMsg);
@@ -497,4 +497,52 @@ function runPipeline() {
   } else {
     updateGlobalStatus(`⚠️ Lỗi ${totalJobs - successCount}/${totalJobs} báo cáo. Chi tiết tại tab Log.`);
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. WEB API - NHẬN TOKEN TỰ ĐỘNG TỪ BÊN NGOÀI
+// ─────────────────────────────────────────────────────────────────────────────
+
+function doPost(e) {
+  var responseOutput;
+  try {
+    // 1. Phân tích dữ liệu JSON nhận được
+    var postData = JSON.parse(e.postData.contents);
+    var token = postData.token;
+
+    // 2. Kiểm tra token có hợp lệ không (phải có chuỗi JWT ey...)
+    if (!token || !token.startsWith("ey")) {
+      responseOutput = {
+        success: false,
+        message: "Token không hợp lệ hoặc rỗng."
+      };
+    } else {
+      // 3. Ghi đè token vào ô B1 của tab Config
+      var configSheet = SPREADSHEET.getSheetByName('Config');
+      if (!configSheet) {
+        // Tự khởi tạo nếu chưa có
+        setupSheet();
+        configSheet = SPREADSHEET.getSheetByName('Config');
+      }
+
+      configSheet.getRange('B1').setValue(token.trim());
+
+      // Ghi log việc cập nhật token thành công
+      writeLog('System_Token', 'SUCCESS', 0, 'Đã tự động cập nhật token mới từ trình duyệt.');
+
+      responseOutput = {
+        success: true,
+        message: "Cập nhật token thành công."
+      };
+    }
+  } catch (error) {
+    responseOutput = {
+      success: false,
+      message: "Lỗi xử lý: " + error.message
+    };
+  }
+
+  // Trả về kết quả dưới dạng JSON cho client (Tampermonkey)
+  return ContentService.createTextOutput(JSON.stringify(responseOutput))
+    .setMimeType(ContentService.MimeType.JSON);
 }
