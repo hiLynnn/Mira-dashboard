@@ -634,6 +634,66 @@ const JOBS = [
       "sort_order": 11,
       "load_mode": 1
     }
+  },
+  {
+    name: "warehouse_storage_time",
+    reportId: "WarehouseStorageTimeReport",
+    dateField: null,
+    uniqueKeys: ["warehouse_storage_time_report_id"],
+    parameters: {
+      "period": 8,
+      "v_is_whole_chain": false,
+      "v_branch_ids": "a38f9189-ad87-11ef-a35e-005056b28600",
+      "v_show_branch": false,
+      "v_from_date": "2026-06-30T17:00:00.000Z",
+      "v_to_date": "2026-07-31T16:59:59.000Z",
+      "v_stock_ids": null,
+      "v_vendor_ids": null,
+      "cache_inventoryGrid": "[]",
+      "v_account_object_name": "Tất cả",
+      "v_lst_warehouse_name": "Tất cả",
+      "v_inventory_category_ids": null,
+      "v_lst_category_name": "Tất cả",
+      "v_inventory_ids": null,
+      "v_lst_inventory_name": "Tất cả",
+      "v_branch_id": "a38f9189-ad87-11ef-a35e-005056b28600",
+      "v_is_refresh": false,
+      "v_session_key": "987f6ca260108e77201a2f603f00273b721a0305e52af9505bbf65c441348efb"
+    },
+    columns: [
+      { "dataFormat": 5, "field": "sku_code", "hasSummary": true },
+      { "dataFormat": 5, "field": "barcode", "hasSummary": true },
+      { "dataFormat": 5, "field": "inventory_item_name", "hasSummary": true },
+      { "dataFormat": 5, "field": "inventory_item_category_name", "hasSummary": true },
+      { "dataFormat": 5, "field": "unit_name", "hasSummary": true },
+      { "dataFormat": 1, "field": "latest_inward_unit_price", "hasSummary": false },
+      { "dataFormat": 1, "field": "latest_outward_sale_unit_price", "hasSummary": false },
+      { "dataFormat": 1, "field": "avg_inward_unit_price", "hasSummary": false },
+      { "dataFormat": 1, "field": "avg_outward_sale_unit_price", "hasSummary": false },
+      { "dataFormat": 4, "field": "quantity_closing_balance", "hasSummary": true },
+      { "dataFormat": 1, "field": "amount_closing_balance", "hasSummary": true },
+      { "dataFormat": 6, "field": "first_inward_date", "hasSummary": true },
+      { "dataFormat": 6, "field": "latest_inward_date", "hasSummary": true },
+      { "dataFormat": 6, "field": "latest_outward_date", "hasSummary": true },
+      { "dataFormat": 3, "field": "days_from_first_inward", "hasSummary": false },
+      { "dataFormat": 3, "field": "days_from_latest_inward", "hasSummary": false },
+      { "dataFormat": 3, "field": "days_from_latest_outward", "hasSummary": false }
+    ],
+    reportList: {
+      "report_id": "WarehouseStorageTimeReport",
+      "report_name": "THOI GIAN LUU KHO HANG HOA",
+      "group_id": 6,
+      "report_type": 1,
+      "is_show": true,
+      "function_report_name": "Proc_WarehouseStorageTimeReport",
+      "function_param_order": "v_session_id,v_to_date,v_stock_ids,v_inventory_category_ids,v_inventory_ids,v_vendor_ids",
+      "parameter_form_name": "warehouse-storage-time-report/WarehouseStorageTimeReportParam",
+      "table_name": "warehouse_storage_time_report",
+      "summary_type": 1,
+      "group_summary_type": 1,
+      "sort_order": 40,
+      "load_mode": 1
+    }
   }
 ];
 
