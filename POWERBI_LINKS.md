@@ -5,9 +5,12 @@ Tài liệu này hướng dẫn cách kết nối Power BI trực tiếp tới G
 ---
 
 ## 1. Thông tin kết nối BigQuery
-*   **Project ID:** `jda-k1`
-*   **Dataset ID:** `vtnl_mira_data`
-*   **Bảng dữ liệu hiện tại:** `order_detail`
+*   **Project ID:** `mira-503910`
+*   **Dataset ID:** `mira_data`
+*   **Bảng dữ liệu hiện tại:** 
+    *   `order_detail`
+    *   `inventory_summary`
+    *   `detailed_inventory_inbound`
 
 ---
 
@@ -50,5 +53,11 @@ Tài liệu này hướng dẫn cách kết nối Power BI trực tiếp tới G
      ```bash
      venv/bin/python3 run_all.py <tên_báo_cáo>
      ```
-     Hệ thống sẽ tự động gọi API, lấy dữ liệu và chạy câu lệnh `MERGE` đẩy trực tiếp vào bảng tương ứng trên Google BigQuery.
+      Hệ thống sẽ tự động gọi API, lấy dữ liệu và chạy câu lệnh `MERGE` đẩy trực tiếp vào bảng tương ứng trên Google BigQuery.
 
+---
+
+## 🔗 Link CSV Raw GitHub (Dành cho liên kết trực tiếp nếu không dùng BigQuery)
+*   **order_detail:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/order_detail.csv`
+*   **inventory_summary:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/inventory_summary.csv`
+*   **detailed_inventory_inbound:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/detailed_inventory_inbound.csv`

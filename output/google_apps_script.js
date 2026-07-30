@@ -94,30 +94,173 @@ const JOBS = [
       "modified_by": "",
       "modified_date": "2025-01-17T08:46:25"
     }
-  }
-
-  /* MẪU CẤU HÌNH BÁO CÁO THỨ 2 (Bạn có thể bỏ comment và chỉnh sửa để thêm):
-  ,{
-    name: "inventory_summary",         // Tên bảng BigQuery mới
+  },
+  {
+    // Báo cáo số 2: Tổng hợp tồn kho (inventory_summary)
+    name: "inventory_summary",
     reportId: "InventorySummaryReport",
-    dateField: "ref_date",             // Cột ngày để lọc incremental
-    uniqueKeys: ["inventory_id"],      // Khóa chính
+    dateField: "", // Báo cáo snapshot không lọc incremental theo ngày
+    uniqueKeys: ["inventory_item_code", "branch_name", "stock_name"],
     parameters: {
       "period": 4,
+      "v_is_whole_chain": false,
       "v_branch_ids": "a38f9189-ad87-11ef-a35e-005056b28600",
-      // ... các param khác lấy từ file json cURL
+      "v_show_branch": false,
+      "v_from_date": "2026-06-30T17:00:00.000Z",
+      "v_to_date": "2026-07-31T16:59:59.000Z",
+      "v_view_detail_by_stock": true,
+      "v_show_inventory_by_stock": false,
+      "v_all_check_seller": 1,
+      "v_stock_ids": null,
+      "v_lst_warehouse_name": "Tất cả",
+      "v_branch_id": "a38f9189-ad87-11ef-a35e-005056b28600",
+      "v_is_refresh": false,
+      "v_session_key": "1dd9b9f965752139bece0057892804e91bbb5431edec656ad0f92fbe8382e2c3"
     },
-    columns: [
-      {"dataFormat": 5, "field": "inventory_item_code", "hasSummary": true},
-      {"dataFormat": 5, "field": "inventory_item_name", "hasSummary": true},
-      // ... các cột khác
-    ],
+     columns: [
+       { "dataFormat": 5, "field": "session_id", "hasSummary": true },
+       { "dataFormat": 5, "field": "inventory_item_code", "hasSummary": true },
+       { "dataFormat": 5, "field": "inventory_item_name", "hasSummary": true },
+       { "dataFormat": 5, "field": "unit_name", "hasSummary": true },
+       { "dataFormat": 5, "field": "stock_name", "hasSummary": true },
+       { "dataFormat": 4, "field": "opening_quantity", "hasSummary": true },
+       { "dataFormat": 1, "field": "opening_amount", "hasSummary": true },
+       { "dataFormat": 4, "field": "inward_quantity", "hasSummary": true },
+       { "dataFormat": 1, "field": "inward_amount", "hasSummary": true },
+       { "dataFormat": 4, "field": "outward_quantity", "hasSummary": true },
+       { "dataFormat": 1, "field": "outward_amount", "hasSummary": true },
+       { "dataFormat": 4, "field": "closing_quantity", "hasSummary": true },
+       { "dataFormat": 1, "field": "closing_amount", "hasSummary": true },
+       { "dataFormat": 4, "field": "detail_id", "hasSummary": true },
+       { "dataFormat": 4, "field": "is_parent", "hasSummary": true },
+       { "dataFormat": 5, "field": "inventory_item_id", "hasSummary": true },
+       { "dataFormat": 5, "field": "parent_id", "hasSummary": true },
+       { "dataFormat": 4, "field": "grade", "hasSummary": true },
+       { "dataFormat": 3, "field": "is_bold", "hasSummary": true },
+       { "dataFormat": 5, "field": "inventory_summary_report_id", "hasSummary": true },
+       { "dataFormat": 5, "field": "inventory_item_code_parent", "hasSummary": true },
+       { "dataFormat": 5, "field": "inventory_item_name_parent", "hasSummary": true },
+       { "dataFormat": 5, "field": "inventory_item_category_name", "hasSummary": true },
+       { "dataFormat": 5, "field": "brand_name", "hasSummary": true },
+       { "dataFormat": 5, "field": "vendor_name_list", "hasSummary": true },
+       { "dataFormat": 5, "field": "stock_id", "hasSummary": true },
+       { "dataFormat": 5, "field": "branch_id", "hasSummary": true },
+       { "dataFormat": 5, "field": "branch_name", "hasSummary": true }
+     ],
     reportList: {
       "report_id": "InventorySummaryReport",
-      // ... các metadata khác của báo cáo
+      "report_name": "TỔNG HỢP TỒN KHO",
+      "group_id": 6,
+      "report_type": 1,
+      "is_show": true,
+      "function_report_name": "Proc_InventorySummaryReport",
+      "function_param_order": "v_session_id, v_period, v_from_date, v_to_date, v_stock_ids, v_lst_warehouse_name, v_view_detail_by_stock, v_show_inventory_by_stock, v_branch_ids",
+      "parameter_form_name": "inventory-summary-report/InventorySummaryReportParam",
+      "parameter_viewer": "/inventory-summary-report/InventorySummaryReportViewer",
+      "link_to_report_detail": "{\n    \"report_id\": \"DetailedInventoryInboundReportParam\",\n    \"parameters\": {\n        \"v_from_date\": \"reportParam.v_from_date\",\n        \"v_to_date\": \"reportParam.v_to_date\", \n        \"v_stock_ids\": \"reportParam.v_stock_ids\",\n        \"v_inventory_category_ids\": \"reportParam.v_inventory_category_ids\",\n        \"v_inventory_ids\": \"currentRow.inventory_item_id\",\n        \"v_branch_ids\": \"currentRow.branch_id\",\n        \"v_view_detail_by_stock\": \"reportParam.v_view_detail_by_stock\",\n        \"v_show_inventory_by_stock\": \"reportParam.v_show_inventory_by_stock\",\n  \"v_lst_warehouse_name\": \"currentRow.stock_name\",\n  \"v_lst_inventory_name\": \"currentRow.inventory_item_name\"\n    },\n    \"reportSubTitleParam\": [\n        {\n            \"key\": \"v_lst_warehouse_name\", \n            \"value\": \"currentRow.stock_name\"\n        },\n        {\n            \"key\": \"v_lst_inventory_name\",\n            \"value\": \"currentRow.inventory_item_code\"\n        }\n    ]\n}",
+      "preview_image": "report-InventorySummaryReport-bg",
+      "table_name": "inventory_summary_report",
+      "summary_type": 1,
+      "group_summary_type": 1,
+      "report_service_name": "InventorySummaryReportService",
+      "sort_order": 22,
+      "signer_group": 1,
+      "inactive": false,
+      "load_mode": 1,
+      "created_by": "",
+      "created_date": "2025-04-08T17:49:42",
+      "modified_by": "",
+      "modified_date": "2025-04-08T17:49:42"
+    }
+  },
+  {
+    // Báo cáo số 3: Chi tiết nhập xuất tồn kho theo hàng hóa (detailed_inventory_inbound)
+    name: "detailed_inventory_inbound",
+    reportId: "DetailedInventoryInboundReportParam",
+    dateField: "ref_date",
+    uniqueKeys: ["inventory_summary_report_id"],
+    parameters: {
+      "period": 4,
+      "v_is_whole_chain": false,
+      "v_branch_ids": "a38f9189-ad87-11ef-a35e-005056b28600",
+      "v_show_branch": false,
+      "v_from_date": "2026-06-30T17:00:00.000Z",
+      "v_to_date": "2026-07-31T16:59:59.000Z",
+      "v_view_detail_by_stock": true,
+      "v_show_inventory_by_stock": false,
+      "v_all_check_seller": 1,
+      "v_stock_ids": null,
+      "cache_inventoryGrid": "[]",
+      "v_lst_warehouse_name": "Tất cả",
+      "v_inventory_category_ids": null,
+      "v_lst_category_name": "Tất cả",
+      "v_inventory_ids": null,
+      "v_lst_inventory_name": "Tất cả",
+      "v_branch_id": "a38f9189-ad87-11ef-a35e-005056b28600",
+      "v_is_refresh": false,
+      "v_session_key": "7c3daee7c6a10daaaa2a5f0dbc8610d85b3f7338fcccc0bc4394834dc4d6a3c9"
+    },
+    columns: [
+      { "dataFormat": 5, "field": "session_id", "hasSummary": true },
+      { "dataFormat": 5, "field": "sku_code", "hasSummary": true },
+      { "dataFormat": 5, "field": "inventory_item_name", "hasSummary": true },
+      { "dataFormat": 5, "field": "unit_name", "hasSummary": true },
+      { "dataFormat": 5, "field": "stock_code", "hasSummary": true },
+      { "dataFormat": 5, "field": "stock_name", "hasSummary": true },
+      { "dataFormat": 4, "field": "opening_quantity", "hasSummary": true },
+      { "dataFormat": 1, "field": "opening_amount", "hasSummary": true },
+      { "dataFormat": 4, "field": "inward_quantity", "hasSummary": true },
+      { "dataFormat": 1, "field": "inward_amount", "hasSummary": true },
+      { "dataFormat": 4, "field": "outward_quantity", "hasSummary": true },
+      { "dataFormat": 1, "field": "outward_amount", "hasSummary": true },
+      { "dataFormat": 4, "field": "closing_quantity", "hasSummary": true },
+      { "dataFormat": 1, "field": "closing_amount", "hasSummary": true },
+      { "dataFormat": 4, "field": "detail_id", "hasSummary": true },
+      { "dataFormat": 4, "field": "is_parent", "hasSummary": true },
+      { "dataFormat": 5, "field": "inventory_item_id", "hasSummary": true },
+      { "dataFormat": 5, "field": "parent_id", "hasSummary": true },
+      { "dataFormat": 4, "field": "grade", "hasSummary": true },
+      { "dataFormat": 3, "field": "is_bold", "hasSummary": true },
+      { "dataFormat": 5, "field": "inventory_summary_report_id", "hasSummary": true },
+      { "dataFormat": 6, "field": "ref_date", "hasSummary": true },
+      { "dataFormat": 5, "field": "ref_no", "hasSummary": true },
+      { "dataFormat": 5, "field": "ref_id", "hasSummary": true },
+      { "dataFormat": 4, "field": "ref_type", "hasSummary": true },
+      { "dataFormat": 5, "field": "account_object_name", "hasSummary": true },
+      { "dataFormat": 5, "field": "parent_name", "hasSummary": true },
+      { "dataFormat": 5, "field": "parent_sku_code", "hasSummary": true },
+      { "dataFormat": 5, "field": "inventory_item_category_name", "hasSummary": true },
+      { "dataFormat": 5, "field": "reference_ref_nos", "hasSummary": true },
+      { "dataFormat": 5, "field": "ref_type_description", "hasSummary": true },
+      { "dataFormat": 5, "field": "branch_id", "hasSummary": true },
+      { "dataFormat": 5, "field": "branch_name", "hasSummary": true }
+    ],
+    reportList: {
+      "report_id": "DetailedInventoryInboundReportParam",
+      "report_name": "CHI TIẾT NHẬP XUẤT TỒN KHO THEO HÀNG HÓA",
+      "group_id": 6,
+      "report_type": 1,
+      "is_show": true,
+      "function_report_name": "Proc_DetailedInventoryInboundReport",
+      "function_param_order": "v_session_id, v_period, v_from_date, v_to_date, v_stock_ids, v_lst_warehouse_name, v_inventory_category_ids, v_lst_category_name, v_inventory_ids, v_show_inventory_by_stock, v_branch_ids",
+      "parameter_form_name": "detailed-inventory-inbound-report/DetailedInventoryInboundReportParam",
+      "parameter_viewer": "/detailed-inventory-inbound-report/DetailedInventoryInboundReportViewer",
+      "preview_image": "report-DetailedInventoryInboundReport-bg",
+      "table_name": "detailed_inventory_inbound_report",
+      "summary_type": 1,
+      "group_summary_type": 1,
+      "timeout_report_seconds": 300,
+      "report_service_name": "DetailedInventoryInboundReportService",
+      "sort_order": 23,
+      "signer_group": 1,
+      "inactive": false,
+      "load_mode": 1,
+      "created_by": "",
+      "created_date": "2025-07-14T13:41:30",
+      "modified_by": "",
+      "modified_date": "2025-07-14T13:41:30"
     }
   }
-  */
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -134,7 +277,7 @@ function setupSheet() {
   configSheet.clear();
   configSheet.getRange('A1:B5').setValues([
     ['bearer_token', ''],
-    ['project_id', 'mira-503005'],
+    ['project_id', 'mira-503910'],
     ['dataset_id', 'mira_data'],
     ['status', 'Chưa chạy'],
     ['last_run', '']
@@ -208,6 +351,10 @@ function updateGlobalStatus(message) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function getMaxDateFromBQ(cfg, job) {
+  if (!job.dateField) {
+    // Nếu báo cáo không lọc incremental theo ngày, dùng mốc v_from_date của tham số gốc làm mặc định
+    return job.parameters.v_from_date || '2025-10-27T17:00:00.000Z';
+  }
   var sql = `
     SELECT MAX(${job.dateField}) as max_date 
     FROM \`${cfg.projectId}.${cfg.datasetId}.${job.name}\`
