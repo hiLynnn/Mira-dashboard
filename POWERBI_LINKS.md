@@ -11,6 +11,13 @@ Tài liệu này hướng dẫn cách kết nối Power BI trực tiếp tới G
     *   `order_detail`
     *   `inventory_summary`
     *   `detailed_inventory_inbound`
+    *   `purchase_detail_ledger`
+    *   `debt_vendor`
+    *   `debt_vendor_detail`
+    *   `inventory_by_lot`
+    *   `summary_inventory_by_expiry_date`
+    *   `daily_sales_detail`
+    *   `summary_inventory_by_order_status`
 
 ---
 
@@ -61,3 +68,10 @@ Tài liệu này hướng dẫn cách kết nối Power BI trực tiếp tới G
 *   **order_detail:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/order_detail.csv`
 *   **inventory_summary:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/inventory_summary.csv`
 *   **detailed_inventory_inbound:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/detailed_inventory_inbound.csv`
+*   **purchase_detail_ledger:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/purchase_detail_ledger.csv`
+*   **debt_vendor:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/debt_vendor.csv`
+*   **debt_vendor_detail:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/debt_vendor_detail.csv`
+*   **inventory_by_lot:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/inventory_by_lot.csv`
+*   **summary_inventory_by_expiry_date:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/summary_inventory_by_expiry_date.csv`
+*   **daily_sales_detail:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/daily_sales_detail.csv`
+*   **summary_inventory_by_order_status:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/summary_inventory_by_order_status.csv`
