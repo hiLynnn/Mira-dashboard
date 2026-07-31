@@ -99,7 +99,8 @@ const JOBS = [
     // Báo cáo số 2: Tổng hợp tồn kho (inventory_summary)
     name: "inventory_summary",
     reportId: "InventorySummaryReport",
-    dateField: "", // Báo cáo snapshot không lọc incremental theo ngày
+    dateField: "",     // Báo cáo snapshot không lọc incremental theo ngày
+    isSnapshot: true,  // Mỗi lần chạy sẽ xóa sạch và nạp lại toàn bộ (WRITE_TRUNCATE)
     uniqueKeys: ["inventory_item_code", "branch_name", "stock_name"],
     parameters: {
       "period": 4,
@@ -473,6 +474,7 @@ const JOBS = [
     name: "summary_inventory_by_expiry_date",
     reportId: "SummaryInventoryByExpiryDate",
     dateField: null,
+    isSnapshot: true,  // Snapshot: xóa sạch và nạp lại toàn bộ mỗi lần chạy
     isSummmayParent: true,
     uniqueKeys: ["summary_inventory_by_expiry_date_id"],
     parameters: {
@@ -583,6 +585,7 @@ const JOBS = [
     name: "summary_inventory_by_order_status",
     reportId: "SummaryInventoryItemByOrderStatus",
     dateField: null,
+    isSnapshot: true,  // Snapshot: xóa sạch và nạp lại toàn bộ mỗi lần chạy
     uniqueKeys: ["summary_inventory_by_order_status_id"],
     parameters: {
       "period": 4,
@@ -639,6 +642,7 @@ const JOBS = [
     name: "warehouse_storage_time",
     reportId: "WarehouseStorageTimeReport",
     dateField: null,
+    isSnapshot: true,  // Snapshot: xóa sạch và nạp lại toàn bộ mỗi lần chạy
     uniqueKeys: ["warehouse_storage_time_report_id"],
     parameters: {
       "period": 8,
@@ -744,7 +748,11 @@ function setupSheet() {
     } catch (e) { }
   }
 
-  SpreadsheetApp.getUi().alert('Hệ thống MIRA: Khởi tạo cấu trúc Sheets thành công! Hãy điền cấu hình và token vào tab Config.');
+  try {
+    SpreadsheetApp.getUi().alert('Hệ thống MIRA: Khởi tạo cấu trúc Sheets thành công! Hãy điền cấu hình và token vào tab Config.');
+  } catch (e) {
+    Logger.log('Khởi tạo cấu trúc Sheets thành công!');
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -770,13 +778,23 @@ function writeLog(jobName, status, records, message) {
     sheet.appendRow(['Thời gian', 'Báo cáo', 'Trạng thái', 'Số bản ghi', 'Chi tiết']);
   }
   sheet.appendRow([new Date(), jobName, status, records, message]);
+  SpreadsheetApp.flush();
 }
 
 function updateGlobalStatus(message) {
   var configSheet = SPREADSHEET.getSheetByName('Config');
   if (configSheet) {
-    configSheet.getRange('B4').setValue(message);
-    configSheet.getRange('B5').setValue(new Date());
+    var data = configSheet.getRange('A1:A10').getValues();
+    var statusRow = 4;
+    var lastRunRow = 5;
+    for (var i = 0; i < data.length; i++) {
+      var key = data[i][0] ? data[i][0].toString().trim() : '';
+      if (key === 'status') statusRow = i + 1;
+      if (key === 'last_run') lastRunRow = i + 1;
+    }
+    configSheet.getRange('B' + statusRow).setValue(message);
+    configSheet.getRange('B' + lastRunRow).setValue(new Date());
+    SpreadsheetApp.flush();
   }
 }
 
@@ -824,12 +842,17 @@ function fetchMisaData(token, fromDate, job) {
   var allRecords = [];
   var skip = 0;
   var take = 500;
-  var toDate = new Date().toISOString();
 
-  // Clone parameters và đè từ ngày/đến ngày
+  // Clone parameters
   var reportParams = JSON.parse(JSON.stringify(job.parameters));
-  reportParams["v_from_date"] = fromDate;
-  reportParams["v_to_date"] = toDate;
+
+  // Chỉ ghi đè ngày nếu báo cáo có dateField (không phải snapshot)
+  // Snapshot job giữ nguyên v_from_date và v_to_date trong config
+  if (job.dateField) {
+    var toDate = new Date().toISOString();
+    reportParams["v_from_date"] = fromDate;
+    reportParams["v_to_date"] = toDate;
+  }
 
   var encodedParams = Utilities.base64Encode(JSON.stringify(reportParams), Utilities.Charset.UTF_8);
 
@@ -923,7 +946,68 @@ function extractRows(resData) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. LOAD & MERGE VÀO GOOGLE BIGQUERY (DÙNG STAGING TABLE VÀ DML)
+// 5A. SNAPSHOT JOBS: XÓA SẠCH VÀ NẠP LẠI TOÀN BỘ (WRITE_TRUNCATE)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function replaceIntoBigQuery(cfg, records, job) {
+  if (!records || records.length === 0) return 0;
+
+  var targetTableId = job.name;
+  var targetTable = BigQuery.Tables.get(cfg.projectId, cfg.datasetId, targetTableId);
+  var targetSchema = targetTable.schema;
+
+  var newlineJsonString = records.map(function (row) {
+    var cleanRow = {};
+    targetSchema.fields.forEach(function (field) {
+      var val = row[field.name];
+      if (val === undefined || val === null || val === '') {
+        cleanRow[field.name] = null;
+      } else if (field.type === 'FLOAT' || field.type === 'INTEGER') {
+        cleanRow[field.name] = Number(val);
+      } else {
+        cleanRow[field.name] = val.toString();
+      }
+    });
+    return JSON.stringify(cleanRow);
+  }).join('\n');
+
+  var dataBlob = Utilities.newBlob(newlineJsonString, 'application/octet-stream');
+
+  var jobConfig = {
+    configuration: {
+      load: {
+        destinationTable: {
+          projectId: cfg.projectId,
+          datasetId: cfg.datasetId,
+          tableId: targetTableId
+        },
+        schema: targetSchema,
+        sourceFormat: 'NEWLINE_DELIMITED_JSON',
+        writeDisposition: 'WRITE_TRUNCATE'  // Xóa sạch và ghi lại toàn bộ
+      }
+    }
+  };
+
+  Logger.log(`[${job.name}] Snapshot: WRITE_TRUNCATE vào bảng ${targetTableId} (${records.length} dòng)`);
+  var loadJob = BigQuery.Jobs.insert(jobConfig, cfg.projectId, dataBlob);
+
+  var jobId = loadJob.jobReference.jobId;
+  while (true) {
+    var status = BigQuery.Jobs.get(cfg.projectId, jobId).status;
+    if (status.state === 'DONE') {
+      if (status.errorResult) {
+        throw new Error('Lỗi load Snapshot: ' + status.errorResult.message);
+      }
+      break;
+    }
+    Utilities.sleep(1000);
+  }
+
+  return records.length;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5B. INCREMENTAL JOBS: MERGE VÀO GOOGLE BIGQUERY (DÙNG STAGING TABLE VÀ DML)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function mergeIntoBigQuery(cfg, records, job) {
@@ -1058,10 +1142,17 @@ function runPipeline() {
         continue;
       }
 
-      // Step 3: Ghi dữ liệu vào BigQuery (UPSERT)
-      var upsertedCount = mergeIntoBigQuery(cfg, records, job);
-
-      writeLog(job.name, 'SUCCESS', upsertedCount, 'Đồng bộ thành công.');
+      // Step 3: Ghi dữ liệu vào BigQuery
+      // - Snapshot job (isSnapshot: true): WRITE_TRUNCATE → xóa sạch & nạp lại
+      // - Incremental job: MERGE (UPSERT) theo uniqueKeys
+      var upsertedCount;
+      if (job.isSnapshot) {
+        upsertedCount = replaceIntoBigQuery(cfg, records, job);
+        writeLog(job.name, 'SUCCESS', upsertedCount, 'Snapshot: Thay thế toàn bộ thành công.');
+      } else {
+        upsertedCount = mergeIntoBigQuery(cfg, records, job);
+        writeLog(job.name, 'SUCCESS', upsertedCount, 'Incremental: Đồng bộ thành công.');
+      }
       successCount++;
 
     } catch (error) {
@@ -1109,11 +1200,14 @@ function doPost(e) {
       configSheet.getRange('B1').setValue(token.trim());
 
       // Ghi log việc cập nhật token thành công
-      writeLog('System_Token', 'SUCCESS', 0, 'Đã tự động cập nhật token mới từ trình duyệt.');
+      writeLog('System_Token', 'SUCCESS', 0, 'Đã tự động cập nhật token mới từ trình duyệt. Đang kích hoạt pipeline đồng bộ dữ liệu...');
+
+      // 4. Kích hoạt pipeline kéo dữ liệu lên BigQuery ngay lập tức
+      runPipeline();
 
       responseOutput = {
         success: true,
-        message: "Cập nhật token thành công."
+        message: "Cập nhật token và kích hoạt đồng bộ BigQuery thành công."
       };
     }
   } catch (error) {
