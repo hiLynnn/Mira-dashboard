@@ -4,6 +4,7 @@
   "take": 500,
   "unique_keys": ["summary_inventory_by_order_status_id"],
   "date_field": null,
+  "incremental": false,
   "parameters": {
     "period": 4,
     "v_is_whole_chain": false,

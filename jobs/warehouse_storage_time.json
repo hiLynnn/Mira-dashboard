@@ -4,6 +4,7 @@
   "take": 500,
   "unique_keys": ["warehouse_storage_time_report_id"],
   "date_field": null,
+  "incremental": false,
   "parameters": {
     "period": 8,
     "v_is_whole_chain": false,

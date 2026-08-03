@@ -748,11 +748,71 @@ function setupSheet() {
     } catch (e) { }
   }
 
+  // 3. Tự động cài đặt trigger chạy định kỳ
+  setupTriggers();
+
   try {
-    SpreadsheetApp.getUi().alert('Hệ thống MIRA: Khởi tạo cấu trúc Sheets thành công! Hãy điền cấu hình và token vào tab Config.');
+    SpreadsheetApp.getUi().alert('Hệ thống MIRA: Khởi tạo thành công! Trigger 4h/lần đã được cài đặt. Hãy điền token vào tab Config.');
   } catch (e) {
     Logger.log('Khởi tạo cấu trúc Sheets thành công!');
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1B. QUẢN LÝ TRIGGER TỰ ĐỘNG
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Xóa tất cả trigger cũ cho runPipeline và tạo lại trigger chạy mỗi 4 tiếng.
+ * Gọi hàm này thủ công hoặc qua setupSheet() để cài đặt lịch chạy tự động.
+ */
+function setupTriggers() {
+  // Xóa tất cả trigger cũ của runPipeline để tránh trùng lặp
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    var t = triggers[i];
+    if (t.getHandlerFunction() === 'runPipeline') {
+      ScriptApp.deleteTrigger(t);
+      Logger.log('Đã xóa trigger cũ: ' + t.getUniqueId());
+    }
+  }
+
+  // Tạo trigger mới: chạy runPipeline() mỗi 4 tiếng
+  ScriptApp.newTrigger('runPipeline')
+    .timeBased()
+    .everyHours(4)
+    .create();
+
+  Logger.log('✅ Đã cài đặt trigger tự động: runPipeline() mỗi 4 tiếng.');
+}
+
+/**
+ * Tạo one-time trigger để chạy runPipeline() sau 1 phút (async).
+ * Dùng trong doPost() để tránh timeout 30s của Web App.
+ */
+function triggerPipelineAsync() {
+  // Xóa các pending one-time trigger cũ (nếu có) để tránh chồng chất
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    var t = triggers[i];
+    if (t.getHandlerFunction() === 'runPipeline' && t.getTriggerSource() === ScriptApp.TriggerSource.CLOCK) {
+      var triggerType = t.getEventType();
+      // Chỉ xóa one-time trigger (CLOCK + AT_SPECIFIC_DATE_TIME), giữ lại periodic trigger
+      if (triggerType === ScriptApp.EventType.AT_SPECIFIC_DATE_TIME) {
+        ScriptApp.deleteTrigger(t);
+        Logger.log('Đã xóa pending one-time trigger cũ: ' + t.getUniqueId());
+      }
+    }
+  }
+
+  // Tạo one-time trigger: chạy runPipeline() sau 1 phút
+  var runAt = new Date(new Date().getTime() + 60 * 1000); // +1 phút
+  ScriptApp.newTrigger('runPipeline')
+    .timeBased()
+    .at(runAt)
+    .create();
+
+  Logger.log('✅ Đã lên lịch chạy pipeline async lúc: ' + runAt.toISOString());
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1200,14 +1260,15 @@ function doPost(e) {
       configSheet.getRange('B1').setValue(token.trim());
 
       // Ghi log việc cập nhật token thành công
-      writeLog('System_Token', 'SUCCESS', 0, 'Đã tự động cập nhật token mới từ trình duyệt. Đang kích hoạt pipeline đồng bộ dữ liệu...');
+      writeLog('System_Token', 'SUCCESS', 0, 'Đã tự động cập nhật token mới từ trình duyệt. Pipeline sẽ chạy trong vòng 1 phút...');
 
-      // 4. Kích hoạt pipeline kéo dữ liệu lên BigQuery ngay lập tức
-      runPipeline();
+      // 4. Kích hoạt pipeline ASYNC (tránh timeout 30s của Web App)
+      //    Tạo one-time trigger để runPipeline() chạy sau ~1 phút
+      triggerPipelineAsync();
 
       responseOutput = {
         success: true,
-        message: "Cập nhật token và kích hoạt đồng bộ BigQuery thành công."
+        message: "Cập nhật token thành công. Pipeline sẽ tự động đồng bộ BigQuery trong vòng 1 phút."
       };
     }
   } catch (error) {

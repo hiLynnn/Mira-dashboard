@@ -5,6 +5,7 @@
   "output_csv": "inventory_summary.csv",
   "take": 500,
   "date_field": "",
+  "incremental": false,
   "unique_keys": [
     "inventory_item_code",
     "branch_name",
