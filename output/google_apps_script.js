@@ -787,32 +787,48 @@ function setupTriggers() {
 }
 
 /**
- * Tạo one-time trigger để chạy runPipeline() sau 1 phút (async).
+ * Wrapper function cho one-time trigger async
+ */
+function runPipelineAsync() {
+  runPipeline();
+}
+
+/**
+ * Tạo one-time trigger để chạy runPipelineAsync() sau 1 phút (async).
  * Dùng trong doPost() để tránh timeout 30s của Web App.
  */
 function triggerPipelineAsync() {
-  // Xóa các pending one-time trigger cũ (nếu có) để tránh chồng chất
-  var triggers = ScriptApp.getProjectTriggers();
-  for (var i = 0; i < triggers.length; i++) {
-    var t = triggers[i];
-    if (t.getHandlerFunction() === 'runPipeline' && t.getTriggerSource() === ScriptApp.TriggerSource.CLOCK) {
-      var triggerType = t.getEventType();
-      // Chỉ xóa one-time trigger (CLOCK + AT_SPECIFIC_DATE_TIME), giữ lại periodic trigger
-      if (triggerType === ScriptApp.EventType.AT_SPECIFIC_DATE_TIME) {
-        ScriptApp.deleteTrigger(t);
-        Logger.log('Đã xóa pending one-time trigger cũ: ' + t.getUniqueId());
+  try {
+    // Xóa các pending one-time trigger cũ để tránh vượt quá giới hạn 20 triggers
+    var triggers = ScriptApp.getProjectTriggers();
+    var deletedCount = 0;
+    for (var i = 0; i < triggers.length; i++) {
+      var t = triggers[i];
+      if (t.getHandlerFunction() === 'runPipelineAsync' || (t.getHandlerFunction() === 'runPipeline' && t.getTriggerSource() === ScriptApp.TriggerSource.CLOCK && t.getEventType() === ScriptApp.EventType.CLOCK)) {
+        // Chỉ xóa trigger 1 lần (async), không xóa trigger định kỳ 4 tiếng (nếu trùng handler)
+        if (t.getHandlerFunction() === 'runPipelineAsync') {
+          ScriptApp.deleteTrigger(t);
+          deletedCount++;
+        }
       }
     }
+
+    // Tạo one-time trigger: chạy runPipelineAsync() sau 1 phút
+    var runAt = new Date(new Date().getTime() + 60 * 1000);
+    ScriptApp.newTrigger('runPipelineAsync')
+      .timeBased()
+      .at(runAt)
+      .create();
+
+    var msg = 'Trigger tạo thành công, pipeline sẽ chạy lúc: ' + runAt.toLocaleString('vi-VN');
+    if (deletedCount > 0) msg += ' (đã xóa ' + deletedCount + ' trigger cũ)';
+    writeLog('System_Trigger', 'CREATED', 0, msg);
+    Logger.log('✅ ' + msg);
+
+  } catch (e) {
+    writeLog('System_Trigger', 'ERROR', 0, 'Lỗi tạo trigger: ' + e.message);
+    Logger.log('❌ Lỗi tạo trigger: ' + e.message);
   }
-
-  // Tạo one-time trigger: chạy runPipeline() sau 1 phút
-  var runAt = new Date(new Date().getTime() + 60 * 1000); // +1 phút
-  ScriptApp.newTrigger('runPipeline')
-    .timeBased()
-    .at(runAt)
-    .create();
-
-  Logger.log('✅ Đã lên lịch chạy pipeline async lúc: ' + runAt.toISOString());
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -903,15 +919,23 @@ function fetchMisaData(token, fromDate, job) {
   var skip = 0;
   var take = 500;
 
+  // Lọc sạch token (xóa khoảng trắng và "Bearer " thừa nếu có)
+  var cleanToken = (token || "").trim();
+  if (cleanToken.toLowerCase().startsWith("bearer ")) {
+    cleanToken = cleanToken.substring(7).trim();
+  }
+
   // Clone parameters
   var reportParams = JSON.parse(JSON.stringify(job.parameters));
 
-  // Chỉ ghi đè ngày nếu báo cáo có dateField (không phải snapshot)
-  // Snapshot job giữ nguyên v_from_date và v_to_date trong config
+  // Ghi đè ngày nếu báo cáo có dateField hoặc là snapshot
   if (job.dateField) {
     var toDate = new Date().toISOString();
     reportParams["v_from_date"] = fromDate;
     reportParams["v_to_date"] = toDate;
+  } else if (job.isSnapshot) {
+    // Snapshot job: tự động cập nhật v_to_date là thời điểm hiện tại
+    reportParams["v_to_date"] = new Date().toISOString();
   }
 
   var encodedParams = Utilities.base64Encode(JSON.stringify(reportParams), Utilities.Charset.UTF_8);
@@ -919,7 +943,7 @@ function fetchMisaData(token, fromDate, job) {
   var headers = {
     "accept": "application/json, text/plain, */*",
     "accept-language": "en,vi;q=0.9",
-    "authorization": "Bearer " + token,
+    "authorization": "Bearer " + cleanToken,
     "content-type": "application/json",
     "origin": "https://eshopapp.misa.vn",
     "referer": "https://eshopapp.misa.vn/management/rp/RPDynamicViewer/" + job.reportId,
@@ -1142,16 +1166,35 @@ function mergeIntoBigQuery(cfg, records, job) {
       INSERT (${insFields}) VALUES (${insValues})
   `;
 
-  Logger.log(`[${job.name}] MERGE into target table...`);
-  var queryRequest = {
-    query: mergeSql,
-    useLegacySql: false
+  // Dùng Jobs.insert + polling thay vì Jobs.query để tránh default 10s timeout
+  // MERGE DML có thể chạy lâu hơn 10s với bảng lớn
+  var mergeJobConfig = {
+    configuration: {
+      query: {
+        query: mergeSql,
+        useLegacySql: false
+      }
+    }
   };
-  var queryJob = BigQuery.Jobs.query(queryRequest, cfg.projectId);
+
+  Logger.log('[' + job.name + '] MERGE into target table (async)...');
+  var mergeJob = BigQuery.Jobs.insert(mergeJobConfig, cfg.projectId);
+  var mergeJobId = mergeJob.jobReference.jobId;
+
+  while (true) {
+    var mergeStatus = BigQuery.Jobs.get(cfg.projectId, mergeJobId).status;
+    if (mergeStatus.state === 'DONE') {
+      if (mergeStatus.errorResult) {
+        throw new Error('Lỗi MERGE: ' + mergeStatus.errorResult.message);
+      }
+      break;
+    }
+    Utilities.sleep(1000);
+  }
 
   try {
     BigQuery.Tables.remove(cfg.projectId, cfg.datasetId, stagingTableId);
-    Logger.log(`[${job.name}] Cleaned staging table.`);
+    Logger.log('[' + job.name + '] Cleaned staging table.');
   } catch (e) {
     Logger.log('Lỗi xóa bảng tạm: ' + e.message);
   }
@@ -1164,70 +1207,104 @@ function mergeIntoBigQuery(cfg, records, job) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function runPipeline() {
-  var cfg;
+  // ── LOCK: Chống chạy song song (trigger 4h + one-time cùng lúc) ──
+  var lock = LockService.getScriptLock();
   try {
-    cfg = getConfig();
+    lock.waitLock(10000); // Chờ tối đa 10 giây để lấy lock
   } catch (e) {
-    Logger.log('Lỗi cấu hình: ' + e.message);
+    writeLog('System_Pipeline', 'SKIPPED', 0, '⚠️ Đã có pipeline đang chạy, instance này bị bỏ qua để tránh xung đột.');
     return;
   }
 
-  Logger.log('=== Khởi động MIRA Multi-Job Pipeline ===');
-
-  if (!cfg.token) {
-    updateGlobalStatus('❌ Thiếu Token MISA');
-    return;
-  }
-
-  var totalJobs = JOBS.length;
-  var successCount = 0;
-  var errorList = [];
-
-  for (var i = 0; i < totalJobs; i++) {
-    var job = JOBS[i];
-    Logger.log(`\n--- Bắt đầu chạy Job [${i + 1}/${totalJobs}]: ${job.name} ---`);
-
+  try {
+    // ── BƯỚC 0: Đọc cấu hình ──
+    var cfg;
     try {
-      // Step 1: Lấy mốc thời gian lớn nhất từ BigQuery
-      var fromDate = getMaxDateFromBQ(cfg, job);
-      Logger.log(`[${job.name}] Mốc cuốn chiếu: ${fromDate}`);
-
-      // Step 2: Kéo dữ liệu từ MISA
-      var records = fetchMisaData(cfg.token, fromDate, job);
-      Logger.log(`[${job.name}] Kéo được ${records.length} dòng mới`);
-
-      if (records.length === 0) {
-        writeLog(job.name, 'NO_DATA', 0, 'Dữ liệu đã mới nhất.');
-        successCount++;
-        continue;
-      }
-
-      // Step 3: Ghi dữ liệu vào BigQuery
-      // - Snapshot job (isSnapshot: true): WRITE_TRUNCATE → xóa sạch & nạp lại
-      // - Incremental job: MERGE (UPSERT) theo uniqueKeys
-      var upsertedCount;
-      if (job.isSnapshot) {
-        upsertedCount = replaceIntoBigQuery(cfg, records, job);
-        writeLog(job.name, 'SUCCESS', upsertedCount, 'Snapshot: Thay thế toàn bộ thành công.');
-      } else {
-        upsertedCount = mergeIntoBigQuery(cfg, records, job);
-        writeLog(job.name, 'SUCCESS', upsertedCount, 'Incremental: Đồng bộ thành công.');
-      }
-      successCount++;
-
-    } catch (error) {
-      var errMsg = error.message;
-      Logger.log(`[${job.name}] ❌ Lỗi: ` + errMsg);
-      writeLog(job.name, 'ERROR', 0, errMsg);
-      errorList.push(`${job.name}: ${errMsg}`);
+      cfg = getConfig();
+      writeLog('System_Pipeline', 'DEBUG', 0, 'Đọc config OK. project=' + cfg.projectId + ' | dataset=' + cfg.datasetId + ' | token=' + (cfg.token ? cfg.token.substring(0, 20) + '...' : 'TRỐNG'));
+    } catch (e) {
+      writeLog('System_Pipeline', 'ERROR', 0, '❌ Lỗi đọc config: ' + e.message);
+      updateGlobalStatus('❌ Lỗi đọc config: ' + e.message);
+      return;
     }
-  }
 
-  // Cập nhật trạng thái tổng thể lên Config Tab
-  if (successCount === totalJobs) {
-    updateGlobalStatus(`✅ Thành công ${successCount}/${totalJobs} báo cáo`);
-  } else {
-    updateGlobalStatus(`⚠️ Lỗi ${totalJobs - successCount}/${totalJobs} báo cáo. Chi tiết tại tab Log.`);
+    if (!cfg.token) {
+      writeLog('System_Pipeline', 'ERROR', 0, '❌ Token rỗng — pipeline dừng.');
+      updateGlobalStatus('❌ Thiếu Token MISA');
+      return;
+    }
+
+    // ── BƯỚC 1: Khởi động ──
+    updateGlobalStatus('🔄 Đang chạy pipeline (' + JOBS.length + ' jobs)...');
+    writeLog('System_Pipeline', 'STARTED', 0, '🚀 Pipeline bắt đầu chạy ' + JOBS.length + ' jobs lúc ' + new Date().toLocaleString('vi-VN'));
+
+    var totalJobs = JOBS.length;
+    var successCount = 0;
+    var errorList = [];
+
+    for (var i = 0; i < totalJobs; i++) {
+      var job = JOBS[i];
+      writeLog(job.name, 'RUNNING', 0, '[' + (i + 1) + '/' + totalJobs + '] Bắt đầu xử lý job...');
+
+      try {
+        // Step 1: Lấy mốc thời gian từ BigQuery
+        var fromDate = getMaxDateFromBQ(cfg, job);
+        writeLog(job.name, 'DEBUG', 0, 'Mốc cuốn chiếu từ BQ: ' + fromDate);
+
+        // Step 2: Kéo dữ liệu từ MISA
+        writeLog(job.name, 'DEBUG', 0, 'Đang gọi MISA API...');
+        var records = fetchMisaData(cfg.token, fromDate, job);
+        writeLog(job.name, 'DEBUG', records.length, 'MISA trả về ' + records.length + ' dòng');
+
+        // Nếu báo cáo Kho/Snapshot trả về 0 dòng (do MISA session cache chưa sẵn sàng), tự động chờ 3s và thử lại
+        if (records.length === 0 && job.isSnapshot) {
+          writeLog(job.name, 'DEBUG', 0, '⏳ MISA cache chưa sẵn sàng. Tự động chờ 3s và thử lại (Retry)...');
+          Utilities.sleep(3000);
+          records = fetchMisaData(cfg.token, fromDate, job);
+          writeLog(job.name, 'DEBUG', records.length, 'MISA trả về (Retry) ' + records.length + ' dòng');
+        }
+
+        if (records.length === 0) {
+          if (job.isSnapshot) {
+            writeLog(job.name, 'NO_DATA', 0, '⚠️ MISA trả về 0 dòng cho báo cáo Snapshot.');
+          } else {
+            writeLog(job.name, 'NO_DATA', 0, '✅ Dữ liệu đã mới nhất (Chưa phát sinh bản ghi mới), bỏ qua.');
+          }
+          successCount++;
+          continue;
+        }
+
+        // Step 3: Ghi vào BigQuery
+        writeLog(job.name, 'DEBUG', records.length, 'Đang ghi vào BigQuery (' + (job.isSnapshot ? 'SNAPSHOT' : 'MERGE') + ')...');
+        var upsertedCount;
+        if (job.isSnapshot) {
+          upsertedCount = replaceIntoBigQuery(cfg, records, job);
+          writeLog(job.name, 'SUCCESS', upsertedCount, '✅ Snapshot: Thay thế toàn bộ thành công.');
+        } else {
+          upsertedCount = mergeIntoBigQuery(cfg, records, job);
+          writeLog(job.name, 'SUCCESS', upsertedCount, '✅ Incremental: Đồng bộ thành công.');
+        }
+        successCount++;
+
+      } catch (error) {
+        var errMsg = error.message || String(error);
+        writeLog(job.name, 'ERROR', 0, '❌ Lỗi: ' + errMsg);
+        errorList.push(job.name + ': ' + errMsg);
+      }
+    }
+
+    // ── BƯỚC CUỐI: Tổng kết ──
+    if (successCount === totalJobs) {
+      updateGlobalStatus('✅ Thành công ' + successCount + '/' + totalJobs + ' báo cáo');
+      writeLog('System_Pipeline', 'DONE', successCount, '🎉 Hoàn thành tất cả ' + totalJobs + ' jobs.');
+    } else {
+      var summary = '⚠️ Lỗi ' + (totalJobs - successCount) + '/' + totalJobs + ': ' + errorList.join(' | ');
+      updateGlobalStatus(summary);
+      writeLog('System_Pipeline', 'DONE', successCount, summary);
+    }
+
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -1259,16 +1336,16 @@ function doPost(e) {
 
       configSheet.getRange('B1').setValue(token.trim());
 
-      // Ghi log việc cập nhật token thành công
-      writeLog('System_Token', 'SUCCESS', 0, 'Đã tự động cập nhật token mới từ trình duyệt. Pipeline sẽ chạy trong vòng 1 phút...');
+      // Ghi log và cập nhật status để user biết token đã được nhận
+      writeLog('System_Token', 'SUCCESS', 0, 'Đã tự động cập nhật token mới. Đang bắt đầu đồng bộ...');
+      updateGlobalStatus('🔄 Token mới nhận. Đang chạy pipeline đồng bộ...');
 
-      // 4. Kích hoạt pipeline ASYNC (tránh timeout 30s của Web App)
-      //    Tạo one-time trigger để runPipeline() chạy sau ~1 phút
-      triggerPipelineAsync();
+      // Kích hoạt pipeline trực tiếp
+      runPipeline();
 
       responseOutput = {
         success: true,
-        message: "Cập nhật token thành công. Pipeline sẽ tự động đồng bộ BigQuery trong vòng 1 phút."
+        message: "Cập nhật token thành công và đã hoàn thành đồng bộ dữ liệu sang BigQuery."
       };
     }
   } catch (error) {
