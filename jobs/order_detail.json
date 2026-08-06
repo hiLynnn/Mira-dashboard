@@ -5,14 +5,16 @@
   "output_csv": "order_detail.csv",
   "take": 500,
   "date_field": "order_date",
-  "unique_keys": ["order_detail_id"],
+  "unique_keys": [
+    "order_detail_id"
+  ],
   "parameters": {
-    "period": 4,
+    "period": 5,
     "v_is_whole_chain": false,
     "v_branch_ids": "a38f9189-ad87-11ef-a35e-005056b28600",
     "v_show_branch": false,
-    "v_from_date": "2025-10-27T17:00:00.000Z",
-    "v_to_date": "2026-07-14T17:00:00.000Z",
+    "v_from_date": "2026-06-30T17:00:00.000Z",
+    "v_to_date": "2026-07-31T16:59:59.000Z",
     "v_order_change_date": 1,
     "v_combo_distribute": 0,
     "v_basic_unit_conversion": 0,
@@ -22,44 +24,243 @@
     "v_customer_ids": "All",
     "v_tax_mode": 3,
     "v_is_refresh": true,
-    "v_session_key": "31dadf56c4ec76c3a95836bc4865fe9975556aa7a1654437be2ef67f42c3577c"
+    "v_session_key": "178f6f873f5a0dfdaae37b2ebc6062d8be178cb404f852c770e881fc3d108c9a"
   },
   "columns": [
-    {"dataFormat": 6, "field": "order_date", "hasSummary": true},
-    {"dataFormat": 5, "field": "ref_no", "hasSummary": true},
-    {"dataFormat": 5, "field": "invoice_no", "hasSummary": true},
-    {"dataFormat": 5, "field": "sku_code", "hasSummary": true},
-    {"dataFormat": 5, "field": "inventory_item_name", "hasSummary": true},
-    {"dataFormat": 5, "field": "item_category_name", "hasSummary": true},
-    {"dataFormat": 5, "field": "unit_name", "hasSummary": true},
-    {"dataFormat": 4, "field": "quantity", "hasSummary": true},
-    {"dataFormat": 1, "field": "unit_price", "hasSummary": true},
-    {"dataFormat": 1, "field": "origin_amount", "hasSummary": true},
-    {"dataFormat": 1, "field": "discount_amount", "hasSummary": true},
-    {"dataFormat": 1, "field": "total_discount_amount", "hasSummary": true},
-    {"dataFormat": 1, "field": "total_revenue", "hasSummary": true},
-    {"dataFormat": 1, "field": "tax_amount", "hasSummary": true},
-    {"dataFormat": 1, "field": "total_revenue_after_tax", "hasSummary": true},
-    {"dataFormat": 1, "field": "cost_of_goods_sold", "hasSummary": true},
-    {"dataFormat": 1, "field": "profit", "hasSummary": true},
-    {"dataFormat": 5, "field": "customer_code", "hasSummary": true},
-    {"dataFormat": 5, "field": "customer_name", "hasSummary": true},
-    {"dataFormat": 5, "field": "customer_tel", "hasSummary": true},
-    {"dataFormat": 5, "field": "cashier_name", "hasSummary": true},
-    {"dataFormat": 5, "field": "channel_name", "hasSummary": true},
-    {"dataFormat": 5, "field": "sale_channel_name", "hasSummary": true},
-    {"dataFormat": 5, "field": "ecom_order_no", "hasSummary": true},
-    {"dataFormat": 5, "field": "delivery_code", "hasSummary": true},
-    {"dataFormat": 5, "field": "ecom_return_no", "hasSummary": true}
+    {
+      "dataFormat": 6,
+      "field": "order_date",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "ref_no",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "invoice_no",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "sku_code",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "inventory_item_name",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "item_category_name",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "unit_name",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 4,
+      "field": "quantity",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "pre_unit_price_before_discount",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "unit_price",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "pre_amount_before_discount",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "origin_amount",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "amount_after_item_discount_before_tax",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "amount_after_item_discount_after_tax",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "discount_amount_before_tax",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "discount_amount",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "allocation_amount_before_tax",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "allocation_amount",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "total_discount_amount_before_tax",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "total_discount_amount",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "point_before_tax_amount",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "point_amount",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "total_revenue",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "tax_amount",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "total_revenue_after_tax",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "ecom_fee",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "revenue_from_ecom",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "cost_of_goods_sold",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 1,
+      "field": "profit",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "customer_code",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "customer_name",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "customer_tel",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "cashier_code",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "cashier_name",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "employee_code",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "employee_name",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "inventory_description",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "order_description",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "channel_name",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "partner_object_name",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "ecom_order_no",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "delivery_code",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "sale_channel_name",
+      "hasSummary": true
+    },
+    {
+      "dataFormat": 5,
+      "field": "ecom_return_no",
+      "hasSummary": true
+    }
   ],
   "report_list": {
     "report_id": "OrderItemRevenueReportDetail",
     "report_name": "SỔ CHI TIẾT BÁN HÀNG",
+    "description": "Thống kê chi tiết các đơn hàng của tất cả kênh bán (Doanh thu, giá vốn, lợi nhuận)",
     "group_id": 2,
     "report_type": 1,
     "is_show": true,
     "function_report_name": "Proc_RP_OrderItemRevenue_Detail",
     "function_param_order": "v_session_id,v_from_date,v_to_date,v_is_whole_chain,v_branch_ids,v_channel_id,v_cashier_ids,v_seller_ids,v_customer_ids,v_order_change_date,v_combo_distribute,v_basic_unit_conversion,v_summary_by_order,v_tax_mode,v_skip,v_take,v_where,v_group_column_script,v_group_by_script,v_summary_columns",
+    "parameter_form_name": "order-item-revenue-detail-param/OrderItemRevenueReportDetailParam",
+    "parameter_viewer": "/order-item-revenue-detail-viewer/OrderItemRevenueReportDetailViewer",
+    "link_to_report_detail": "{\r\n    \"report_id\": \"OrderItemRevenueReportDetail\"\r\n}",
+    "preview_image": "report-OrderItemRevenueReportDetailReport-bg",
     "table_name": "order_item_revenue_report_detail",
     "summary_type": 1,
     "group_summary_type": 1,

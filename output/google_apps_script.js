@@ -36,8 +36,9 @@ const JOBS = [
       "v_cashier_ids": "All",
       "v_seller_ids": "All",
       "v_customer_ids": "All",
+      "v_summary_by_order": false,
       "v_tax_mode": 3,
-      "v_is_refresh": true,
+      "v_is_refresh": false,
       "v_session_key": "31dadf56c4ec76c3a95836bc4865fe9975556aa7a1654437be2ef67f42c3577c"
     },
 
@@ -880,12 +881,13 @@ function updateGlobalStatus(message) {
 
 function getMaxDateFromBQ(cfg, job) {
   if (!job.dateField) {
-    // Nếu báo cáo không lọc incremental theo ngày, dùng mốc v_from_date của tham số gốc làm mặc định
     return job.parameters.v_from_date || '2025-10-27T17:00:00.000Z';
   }
   var sql = `
     SELECT MAX(${job.dateField}) as max_date 
     FROM \`${cfg.projectId}.${cfg.datasetId}.${job.name}\`
+    WHERE ${job.dateField} IS NOT NULL 
+      AND LENGTH(CAST(${job.dateField} AS STRING)) >= 10
   `;
 
   try {
@@ -895,114 +897,213 @@ function getMaxDateFromBQ(cfg, job) {
     };
     var queryResults = BigQuery.Jobs.query(queryRequest, cfg.projectId);
 
-    if (queryResults.rows && queryResults.rows[0].f[0].v !== null) {
-      var maxDateStr = queryResults.rows[0].f[0].v;
-      var cleanDate = maxDateStr.split('.')[0];
-      if (cleanDate.indexOf('T') !== -1 && !cleanDate.endsWith('Z')) {
-        return cleanDate + '.000Z';
+    if (queryResults.rows && queryResults.rows[0] && queryResults.rows[0].f[0].v !== null && queryResults.rows[0].f[0].v !== undefined) {
+      var rawVal = queryResults.rows[0].f[0].v.toString().trim();
+      if (rawVal && rawVal.length >= 10) {
+        var cleanDate = rawVal.split('.')[0].replace(' ', 'T');
+        if (cleanDate.length === 10) {
+          cleanDate += 'T00:00:00';
+        }
+        if (!cleanDate.endsWith('Z')) {
+          cleanDate += '.000Z';
+        }
+        var testD = new Date(cleanDate);
+        if (!isNaN(testD.getTime()) && testD.getFullYear() > 2000) {
+          Logger.log(`[${job.name}] Mốc max_date từ BigQuery: ${cleanDate} (Gốc: ${rawVal})`);
+          return cleanDate;
+        }
       }
-      return cleanDate;
     }
   } catch (e) {
     Logger.log(`[${job.name}] Bảng chưa có dữ liệu hoặc lỗi truy vấn: ` + e.message);
   }
-  return '2025-10-27T17:00:00.000Z'; // Mốc bắt đầu mặc định
+  return '2025-10-27T17:00:00.000Z'; // Mốc bắt đầu mặc định hợp lệ
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 4. EXTRACT - FETCH DATA TỪ MISA API
 // ─────────────────────────────────────────────────────────────────────────────
 
+function getSidFromToken(token) {
+  if (!token || token.indexOf('.') === -1) return '';
+  try {
+    var parts = token.split('.');
+    if (parts.length >= 2) {
+      var payloadB64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      while (payloadB64.length % 4 !== 0) {
+        payloadB64 += '=';
+      }
+      var decodedJsonStr = Utilities.newBlob(Utilities.base64Decode(payloadB64)).getDataAsString();
+      var jwtObj = JSON.parse(decodedJsonStr);
+      return jwtObj.sid || '';
+    }
+  } catch (e) {
+    Logger.log('Không thể extract sid từ token: ' + e.message);
+  }
+  return '';
+}
+
 function fetchMisaData(token, fromDate, job) {
   var apiUrl = 'https://eshopapp.misa.vn/g1/api/report/dynamic/paging-filter';
-  var allRecords = [];
-  var skip = 0;
-  var take = 500;
-
-  // Lọc sạch token (xóa khoảng trắng và "Bearer " thừa nếu có)
   var cleanToken = (token || "").trim();
   if (cleanToken.toLowerCase().startsWith("bearer ")) {
     cleanToken = cleanToken.substring(7).trim();
   }
 
-  // Clone parameters
-  var reportParams = JSON.parse(JSON.stringify(job.parameters));
-
-  // Ghi đè ngày nếu báo cáo có dateField hoặc là snapshot
-  if (job.dateField) {
-    var toDate = new Date().toISOString();
-    reportParams["v_from_date"] = fromDate;
-    reportParams["v_to_date"] = toDate;
-  } else if (job.isSnapshot) {
-    // Snapshot job: tự động cập nhật v_to_date là thời điểm hiện tại
-    reportParams["v_to_date"] = new Date().toISOString();
-  }
-
-  var encodedParams = Utilities.base64Encode(JSON.stringify(reportParams), Utilities.Charset.UTF_8);
+  var sid = getSidFromToken(cleanToken);
+  var cookieHeader = sid ? ('_eshop_env=g1; env=g1; _eshop_x-session=' + sid + '; x-session=' + sid) : '_eshop_env=g1; env=g1';
 
   var headers = {
     "accept": "application/json, text/plain, */*",
     "accept-language": "en,vi;q=0.9",
     "authorization": "Bearer " + cleanToken,
     "content-type": "application/json",
+    "cookie": cookieHeader,
     "origin": "https://eshopapp.misa.vn",
     "referer": "https://eshopapp.misa.vn/management/rp/RPDynamicViewer/" + job.reportId,
-    "x-deviceid": "9bd1e690-ff58-44f8-bf24-5ac0085f382e",
+    "x-deviceid": "0099e0c7-f5b4-4998-9c37-5d5059c740cf",
     "x-ems-context": "{\"dbid\":\"7c06c972-5014-46e6-a8f8-d5c11767dca4\",\"tid\":\"65589cba-5286-4dc8-a727-a7f5d8fe36c4\",\"tco\":\"ctttmvdvmg92\",\"lang\":\"vi\",\"brid\":\"a38f9189-ad87-11ef-a35e-005056b28600\",\"shtype\":3,\"ica\":false}",
     "x-ms-bid": "a38f9189-ad87-11ef-a35e-005056b28600",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
   };
 
-  while (true) {
-    var payload = {
-      "report_id": job.reportId,
-      "report_load_type": 1,
-      "parameters": encodedParams,
-      "columns": JSON.stringify(job.columns),
-      "report_list": job.reportList,
-      "is_export": false,
-      "skip": skip,
-      "take": take
-    };
-
-    var options = {
-      "method": "post",
-      "headers": headers,
-      "payload": JSON.stringify(payload),
-      "muteHttpExceptions": true
-    };
-
-    var response = UrlFetchApp.fetch(apiUrl, options);
-    var responseCode = response.getResponseCode();
-    var responseText = response.getContentText();
-
-    if (responseCode === 401 || responseCode === 422) {
-      throw new Error('TOKEN_EXPIRED: Token hết hạn (401/422).');
+  // Tự động chia nhỏ khoảng thời gian thành các khung 30 ngày nếu truy vấn dài
+  var dateRanges = [];
+  if (job.dateField) {
+    var validFromDate = fromDate;
+    var checkD = new Date(validFromDate);
+    if (isNaN(checkD.getTime()) || checkD.getFullYear() < 2000) {
+      validFromDate = '2025-10-27T17:00:00.000Z';
     }
-
-    if (responseCode !== 200) {
-      throw new Error('MISA API Error (' + responseCode + '): ' + responseText.substring(0, 300));
+    var startMs = new Date(validFromDate).getTime();
+    var endMs = new Date().getTime();
+    if (isNaN(startMs) || startMs > endMs) {
+      startMs = new Date('2025-10-27T17:00:00.000Z').getTime();
     }
-
-    var resJson = JSON.parse(responseText);
-    var rows = extractRows(resJson);
-
-    if (!rows || rows.length === 0) {
-      break;
+    var stepMs = 30 * 24 * 60 * 60 * 1000; // 30 ngày mỗi đợt
+    var curStart = startMs;
+    while (curStart < endMs) {
+      var curEnd = Math.min(curStart + stepMs, endMs);
+      dateRanges.push({
+        from: new Date(curStart).toISOString(),
+        to: new Date(curEnd).toISOString()
+      });
+      curStart = curEnd;
     }
+  } else {
+    dateRanges.push({ from: null, to: job.isSnapshot ? new Date().toISOString() : null });
+  }
 
-    allRecords = allRecords.concat(rows);
-    Logger.log(`[${job.name}] Đã tải: ` + allRecords.length + ' records (Skip: ' + skip + ')');
+  var allRecords = [];
 
-    if (rows.length < take) {
-      break;
+  for (var r = 0; r < dateRanges.length; r++) {
+    var range = dateRanges[r];
+    var reportParams = JSON.parse(JSON.stringify(job.parameters));
+    if (range.from) reportParams["v_from_date"] = range.from;
+    if (range.to) reportParams["v_to_date"] = range.to;
+
+    // QUAN TRỌNG: session_id và v_session_key phải cố định trong suốt các trang phân trang (Skip) của đợt này
+    var currentSessionId = Utilities.getUuid();
+    reportParams["v_session_key"] = Utilities.getUuid().replace(/-/g, '');
+
+    var encodedParams = Utilities.base64Encode(JSON.stringify(reportParams), Utilities.Charset.UTF_8);
+
+    var skip = 0;
+    var take = 500;
+    var totalRecords = null;
+
+    while (true) {
+      var payload = {
+        "report_id": job.reportId,
+        "report_load_type": 1,
+        "parameters": encodedParams,
+        "columns": JSON.stringify(job.columns),
+        "report_list": job.reportList,
+        "is_export": false,
+        "session_id": currentSessionId,
+        "skip": skip,
+        "take": take
+      };
+
+      var options = {
+        "method": "post",
+        "headers": headers,
+        "payload": JSON.stringify(payload),
+        "muteHttpExceptions": true
+      };
+
+      var response = UrlFetchApp.fetch(apiUrl, options);
+      var responseCode = response.getResponseCode();
+      var responseText = response.getContentText();
+
+      if (responseCode === 500) {
+        Logger.log('[' + job.name + '] ⚠️ MISA API 500, tự động chờ 3s và thử lại (Retry)...');
+        Utilities.sleep(3000);
+        response = UrlFetchApp.fetch(apiUrl, options);
+        responseCode = response.getResponseCode();
+        responseText = response.getContentText();
+      }
+
+      if (responseCode === 401 || responseCode === 422) {
+        throw new Error('TOKEN_EXPIRED: Token hết hạn (401/422).');
+      }
+
+      if (responseCode !== 200) {
+        throw new Error('MISA API Error (' + responseCode + '): ' + responseText.substring(0, 300));
+      }
+
+      var resJson = JSON.parse(responseText);
+      var rows = extractRows(resJson);
+
+      if (totalRecords === null) {
+        totalRecords = extractTotal(resJson);
+      }
+
+      if (!rows || rows.length === 0) {
+        break;
+      }
+
+      allRecords = allRecords.concat(rows);
+      var progressStr = totalRecords ? (` / ${totalRecords}`) : '';
+      Logger.log(`[${job.name}] Đã tải: ${allRecords.length}${progressStr} records (Skip: ${skip})`);
+
+      if (rows.length < take) {
+        break;
+      }
+      if (totalRecords !== null && allRecords.length >= totalRecords) {
+        break;
+      }
+      if (skip >= 100000) { // Giới hạn an toàn chống lặp vô tận
+        break;
+      }
+
+      skip += take;
+      Utilities.sleep(300);
     }
-
-    skip += take;
-    Utilities.sleep(300);
   }
 
   return allRecords;
+}
+
+function extractTotal(resData) {
+  if (typeof resData === 'object' && resData !== null) {
+    var checkKeys = ['total', 'Total', 'total_count', 'TotalCount', 'count', 'Count'];
+    for (var i = 0; i < checkKeys.length; i++) {
+      var key = checkKeys[i];
+      if (key in resData && typeof resData[key] === 'number') {
+        return resData[key];
+      }
+    }
+    if ('data' in resData && typeof resData.data === 'object' && resData.data !== null) {
+      for (var j = 0; j < checkKeys.length; j++) {
+        var k = checkKeys[j];
+        if (k in resData.data && typeof resData.data[k] === 'number') {
+          return resData.data[k];
+        }
+      }
+    }
+  }
+  return null;
 }
 
 function extractRows(resData) {
@@ -1096,6 +1197,30 @@ function replaceIntoBigQuery(cfg, records, job) {
 
 function mergeIntoBigQuery(cfg, records, job) {
   if (!records || records.length === 0) return 0;
+
+  // Loại bỏ trùng lặp theo uniqueKeys trong đợt records mới trước khi load vào staging table
+  var uniqueKeys = job.uniqueKeys || ["order_detail_id"];
+  var recordMap = {};
+  for (var i = 0; i < records.length; i++) {
+    var r = records[i];
+    var keyParts = [];
+    for (var k = 0; k < uniqueKeys.length; k++) {
+      var kName = uniqueKeys[k];
+      if (r[kName] !== undefined && r[kName] !== null && r[kName] !== '') {
+        keyParts.push(r[kName]);
+      }
+    }
+    var keyStr = keyParts.length > 0 ? keyParts.join('_') : JSON.stringify(r);
+    recordMap[keyStr] = r;
+  }
+  var cleanRecords = [];
+  for (var kKey in recordMap) {
+    cleanRecords.push(recordMap[kKey]);
+  }
+  if (cleanRecords.length < records.length) {
+    Logger.log(`[${job.name}] Đã lọc trùng lặp batch mới: ` + records.length + ' ➔ ' + cleanRecords.length + ' bản ghi duy nhất.');
+  }
+  records = cleanRecords;
 
   var targetTableId = job.name;
   var stagingTableId = targetTableId + '_staging_tmp';
