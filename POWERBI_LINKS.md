@@ -19,6 +19,7 @@ Tài liệu này hướng dẫn cách kết nối Power BI trực tiếp tới G
     *   `daily_sales_detail`
     *   `summary_inventory_by_order_status`
     *   `warehouse_storage_time`
+    *   `inventory_items`
 
 ---
 
@@ -77,3 +78,4 @@ Tài liệu này hướng dẫn cách kết nối Power BI trực tiếp tới G
 *   **daily_sales_detail:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/daily_sales_detail.csv`
 *   **summary_inventory_by_order_status:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/summary_inventory_by_order_status.csv`
 *   **warehouse_storage_time:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/warehouse_storage_time.csv`
+*   **inventory_items:** `https://raw.githubusercontent.com/hiLynnn/Mira-dashboard/main/output/inventory_items.csv`

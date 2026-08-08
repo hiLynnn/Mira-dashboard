@@ -1,0 +1,20 @@
+{
+  "name": "inventory_items",
+  "output_csv": "inventory_items.csv",
+  "take": 500,
+  "api_url": "https://eshopapp.misa.vn/g2/api/di/InventoryItems/list",
+  "raw_payload": {
+    "skip": 0,
+    "take": 500,
+    "sort": "[{\"property\":\"106\",\"desc\":false}]",
+    "filter": "[{\"op\":7,\"aop\":1,\"field\":\"10\",\"ors\":[],\"isOptionFilter\":false,\"value\":0},{\"op\":7,\"aop\":1,\"field\":\"114\",\"ors\":[],\"isOptionFilter\":false,\"value\":true}]",
+    "emptyFilter": "",
+    "columns": "106,105,107,18,108,10,1300,1322,1299,1295,29,110,1217,1490,265,161,32,742,109,112,113,111,127,128,1418,1288,1578,1191,137,162,535",
+    "view": 1
+  },
+  "incremental": false,
+  "date_field": "",
+  "unique_keys": [
+    "inventory_item_id"
+  ]
+}
